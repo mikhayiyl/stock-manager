@@ -1,0 +1,49 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "itemCode": "TIN-ROOF28",
+      "name": "Tin Roofing Sheet 28 Gauge",
+      "numberInStock": 350,
+      "received": "2025-06-27",
+      "damaged": 5,
+      "unit": "pcs"
+    },
+    {
+      "id": 2,
+      "itemCode": "CEM-50GREY",
+      "name": "Cement 50kg Bag - Grey",
+      "numberInStock": 220,
+      "received": "2025-06-25",
+      "damaged": 0,
+      "unit": "bags"
+    },
+    {
+      "id": 3,
+      "itemCode": "STEEL-TMT12",
+      "name": "TMT Steel Bar 12mm",
+      "numberInStock": 410,
+      "received": "2025-06-24",
+      "damaged": 3,
+      "unit": "lengths"
+    },
+    {
+      "id": 4,
+      "itemCode": "NAILS-3INCH",
+      "name": "Nails 3 Inch (25kg Box)",
+      "numberInStock": 60,
+      "received": "2025-06-26",
+      "damaged": 1,
+      "unit": "boxes"
+    },
+    {
+      "id": 5,
+      "itemCode": "WATERTANK-1000L",
+      "name": "Water Tank 1000 Liters",
+      "numberInStock": 12,
+      "received": "2025-06-23",
+      "damaged": 0,
+      "unit": "units"
+    }
+  ]
+}
