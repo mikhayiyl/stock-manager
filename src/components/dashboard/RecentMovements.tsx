@@ -7,7 +7,6 @@ export function RecentMovements() {
 
   useEffect(() => {
     axios.get<Product[]>("http://localhost:3001/products").then((res) => {
-      console.log(res);
       const sorted = [...res.data].sort(
         (a, b) =>
           new Date(b.received).getTime() - new Date(a.received).getTime()

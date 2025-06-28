@@ -1,6 +1,8 @@
 import { Route, Routes } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
 import DashboardPage from "./pages/Dashboard";
+import StockListPage from "./pages/StockListPage";
+import ReceivePage from "./pages/ReceivePage";
 
 function App() {
   return (
@@ -8,7 +10,8 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<DashboardPage />} />
-          {/* Add more routes like <Route path="/stock" element={<StockListPage />} /> */}
+          <Route path="/stock" element={<StockListPage />} />
+          <Route path="/receive" element={<ReceivePage />} />
         </Routes>
       </Layout>
     </>
