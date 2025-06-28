@@ -4,6 +4,7 @@ import DashboardPage from "./pages/Dashboard";
 import StockListPage from "./pages/StockListPage";
 import ReceivePage from "./pages/ReceivePage";
 import OrdersPage from "./pages/OrdersPage";
+import ReportPage from "./pages/ReportPage";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/stock" element={<StockListPage />} />
           <Route path="/receive" element={<ReceivePage />} />
           <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/reports" element={<ReportPage />} />
         </Routes>
       </Layout>
     </>

@@ -60,6 +60,12 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
         new Date(b.received).getTime() - new Date(a.received).getTime()
     );
     onStockUpdate(sorted, matchedProduct ? matchedProduct.id : sorted[0].id);
+
+    await axios.post("http://localhost:3001/receipts", {
+      itemCode: data.itemCode,
+      quantity: data.quantity,
+      date: new Date().toISOString(),
+    });
   };
 
   return (

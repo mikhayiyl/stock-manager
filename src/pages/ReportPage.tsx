@@ -1,0 +1,18 @@
+import { useState } from "react";
+import { ReportFilter } from "@/components/reports/ReportFilter";
+import { StockCardReport } from "@/components/reports/StockCardReport";
+
+export default function ReportPage() {
+  const [filter, setFilter] = useState<{ from: string; to: string }>({
+    from: "",
+    to: "",
+  });
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Stock Movement Report</h2>
+      <ReportFilter onFilterChange={setFilter} />
+      <StockCardReport filter={filter} />
+    </div>
+  );
+}
