@@ -3,23 +3,26 @@ import { ReceiveItemForm } from "@/components/receive/ReceiveItemForm";
 import { ProductTable } from "@/components/receive/ProductsTable";
 import productClient from "@/services/product-client";
 import type { Product } from "@/types/Product";
+import { CanceledError } from "axios";
 
 export default function ReceivePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { request } = productClient.getAll<Product>();
-      const res = await request;
-      const sorted = res.data.sort(
-        (a, b) =>
-          new Date(b.received).getTime() - new Date(a.received).getTime()
-      );
-      setProducts(sorted);
-    };
-
-    fetchProducts();
+    const { request } = productClient.getAll<Product>();
+    request
+      .then((res) =>
+        res.data.sort(
+          (a, b) =>
+            new Date(b.received).getTime() - new Date(a.received).getTime()
+        )
+      )
+      .then((data) => setProducts(data))
+      .catch((error) => {
+        if (error instanceof CanceledError) return;
+        console.log(error.message);
+      });
   }, []);
 
   return (
