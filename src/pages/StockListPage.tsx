@@ -1,7 +1,6 @@
-import { useState } from "react";
 import { DamageModal } from "@/components/stock/DamageModal";
 import useProducts from "@/hooks/useProducts";
-import type { Product } from "@/types/Product";
+import { useState } from "react";
 
 export default function StockListPage() {
   const { products: allProducts } = useProducts();

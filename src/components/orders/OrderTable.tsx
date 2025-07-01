@@ -1,5 +1,5 @@
 import useOrders from "@/hooks/useOrders";
-import type { Order } from "@/types/Order";
+import { useState } from "react";
 
 type Props = {
   highlightId: string | null;
@@ -8,13 +8,21 @@ type Props = {
 export function OrderTable({ highlightId }: Props) {
   const { orders } = useOrders();
   const sorted = orders.sort(
-    (a: Order, b: Order) =>
-      new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(sorted.length / itemsPerPage);
+  const paginated = sorted.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   return (
-    <div className="bg-white p-4 rounded shadow overflow-x-auto">
-      <h3 className="text-lg font-semibold mb-4">Recent Orders</h3>
+    <div className="bg-white p-4 rounded shadow overflow-x-auto space-y-4">
+      <h3 className="text-lg font-semibold">Recent Orders</h3>
+
       <table className="min-w-full text-sm">
         <thead className="bg-gray-100 text-left">
           <tr>
@@ -25,7 +33,7 @@ export function OrderTable({ highlightId }: Props) {
           </tr>
         </thead>
         <tbody>
-          {sorted.map((order) => (
+          {paginated.map((order) => (
             <tr
               key={order._id}
               className={`border-b ${
@@ -42,6 +50,36 @@ export function OrderTable({ highlightId }: Props) {
           ))}
         </tbody>
       </table>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === i + 1 ? "bg-green-600 text-white" : ""
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

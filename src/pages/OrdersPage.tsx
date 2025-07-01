@@ -3,7 +3,7 @@ import { OrderForm } from "@/components/orders/OrderForm";
 import { OrderTable } from "@/components/orders/OrderTable";
 
 export default function OrdersPage() {
-  const [lastOrderId, setLastOrderId] = useState<number | null>(null);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">

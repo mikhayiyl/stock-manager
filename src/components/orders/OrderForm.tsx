@@ -3,6 +3,7 @@ import productClient from "@/services/product-client";
 import type { Product } from "@/types/Product";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 type FormData = {
   orderNumber: string;
@@ -11,7 +12,7 @@ type FormData = {
 };
 
 type Props = {
-  onOrderComplete: (orderId: number) => void;
+  onOrderComplete: (orderId: string) => void;
 };
 
 export function OrderForm({ onOrderComplete }: Props) {
@@ -25,19 +26,20 @@ export function OrderForm({ onOrderComplete }: Props) {
       });
 
       const res = await request;
-
       const product: Product = res.data[0];
 
       if (!product) {
         setError("Product not found");
+        toast.error("Product not found");
         return;
       }
 
       if (data.quantity > product.numberInStock) {
         setError("Not enough stock available");
+        toast.error("Not enough stock available");
         return;
       }
-      // 1. Log order
+
       const orderRes = await orderClient.create({
         orderNumber: data.orderNumber,
         productId: product._id,
@@ -46,17 +48,20 @@ export function OrderForm({ onOrderComplete }: Props) {
         date: new Date().toISOString(),
       });
 
-      // 2. Update stock
-      productClient.patch(product._id, {
+      await productClient.patch(product._id, {
         numberInStock: product.numberInStock - data.quantity,
       });
+
+      window.dispatchEvent(new Event("orders:refresh"));
+      window.dispatchEvent(new Event("products:refresh"));
 
       onOrderComplete(orderRes.data.id);
       reset();
       setError(null);
-      alert("Order processed successfully");
+      toast.success("Order processed successfully");
     } catch (err) {
       setError("Something went wrong");
+      toast.error("Something went wrong");
     }
   };
 
