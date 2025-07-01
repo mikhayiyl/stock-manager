@@ -1,7 +1,8 @@
 import orderClient from "@/services/order-client";
 import productClient from "@/services/product-client";
 import type { Product } from "@/types/Product";
-import { useState } from "react";
+import { CanceledError } from "axios";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -16,25 +17,52 @@ type Props = {
 };
 
 export function OrderForm({ onOrderComplete }: Props) {
-  const { register, handleSubmit, reset } = useForm<FormData>();
+  const { register, handleSubmit, watch, reset, setFocus } =
+    useForm<FormData>();
+
+  const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const itemCode = watch("itemCode");
+
+  useEffect(() => {
+    if (itemCode?.trim()) {
+      const { request, cancel } = productClient.getAll<Product>({ itemCode });
+
+      request
+        .then((res) => setMatchedProduct(res.data[0] ?? null))
+        .catch((err) => {
+          if (err instanceof CanceledError) return;
+          console.error("Fetch error:", err);
+          setMatchedProduct(null);
+        });
+
+      return () => cancel();
+    } else {
+      setMatchedProduct(null);
+    }
+  }, [itemCode]);
+
+  useEffect(() => {
+    if (matchedProduct) {
+      setFocus("quantity");
+    }
+  }, [matchedProduct, setFocus]);
 
   const onSubmit = async (data: FormData) => {
     try {
-      const { request } = productClient.getAll<Product>({
-        itemCode: data.itemCode,
-      });
-
-      const res = await request;
-      const product: Product = res.data[0];
-
-      if (!product) {
+      if (!matchedProduct) {
         setError("Product not found");
         toast.error("Product not found");
         return;
       }
 
-      if (data.quantity > product.numberInStock) {
+      if (matchedProduct.numberInStock === 0) {
+        setError("This item is out of stock");
+        toast.error("This item is out of stock");
+        return;
+      }
+
+      if (data.quantity > matchedProduct.numberInStock) {
         setError("Not enough stock available");
         toast.error("Not enough stock available");
         return;
@@ -42,14 +70,14 @@ export function OrderForm({ onOrderComplete }: Props) {
 
       const orderRes = await orderClient.create({
         orderNumber: data.orderNumber,
-        productId: product._id,
-        itemCode: product.itemCode,
+        productId: matchedProduct._id,
+        itemCode: matchedProduct.itemCode,
         quantity: data.quantity,
         date: new Date().toISOString(),
       });
 
-      await productClient.patch(product._id, {
-        numberInStock: product.numberInStock - data.quantity,
+      await productClient.patch(matchedProduct._id, {
+        numberInStock: matchedProduct.numberInStock - data.quantity,
       });
 
       window.dispatchEvent(new Event("orders:refresh"));
@@ -57,6 +85,7 @@ export function OrderForm({ onOrderComplete }: Props) {
 
       onOrderComplete(orderRes.data.id);
       reset();
+      setMatchedProduct(null);
       setError(null);
       toast.success("Order processed successfully");
     } catch (err) {
@@ -88,8 +117,23 @@ export function OrderForm({ onOrderComplete }: Props) {
         />
       </div>
 
+      {matchedProduct ? (
+        <div className="bg-yellow-50 border p-3 rounded text-sm">
+          <p>
+            <strong>Item:</strong> {matchedProduct.name}
+          </p>
+          <p>
+            <strong>Available Stock:</strong> {matchedProduct.numberInStock}{" "}
+            {matchedProduct.unit}
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500">Enter item code to check stock</p>
+      )}
+
       <div>
         <label className="text-sm font-medium">Quantity</label>
+
         <input
           type="number"
           {...register("quantity", {
@@ -97,7 +141,8 @@ export function OrderForm({ onOrderComplete }: Props) {
             min: 1,
             valueAsNumber: true,
           })}
-          className="w-full border px-3 py-2 rounded mt-1"
+          disabled={matchedProduct?.numberInStock === 0}
+          className="w-full border px-3 py-2 rounded mt-1 disabled:bg-gray-100"
           placeholder="e.g. 10"
         />
       </div>
