@@ -1,21 +1,42 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import type { Product } from "@/types/Product";
+import { useState } from "react";
 import { DamageModal } from "@/components/stock/DamageModal";
+import useProducts from "@/hooks/useProducts";
+import type { Product } from "@/types/Product";
 
 export default function StockListPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const { products: allProducts } = useProducts();
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:3001/products")
-      .then((res) => setProducts(res.data))
-      .catch((err) => console.error("Fetch error:", err));
-  }, []);
+  const filtered = allProducts.filter((p) =>
+    `${p.itemCode} ${p.name}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginated = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Stock List</h2>
+
+      <input
+        type="text"
+        placeholder="Search by item code or name..."
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setCurrentPage(1); // reset to page 1 on search
+        }}
+        className="w-full max-w-md border px-4 py-2 rounded shadow-sm"
+      />
 
       <div className="overflow-x-auto bg-white rounded shadow">
         <table className="min-w-full text-sm">
@@ -31,9 +52,9 @@ export default function StockListPage() {
             </tr>
           </thead>
           <tbody>
-            {products.map((product) => (
+            {paginated.map((product) => (
               <tr
-                key={product.id}
+                key={product._id}
                 className={
                   product.numberInStock === 0
                     ? "bg-red-50 text-gray-600"
@@ -54,10 +75,41 @@ export default function StockListPage() {
           </tbody>
         </table>
 
-        {products.length === 0 && (
+        {filtered.length === 0 && (
           <p className="p-4 text-center text-gray-500">No products found.</p>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => handlePageChange(i + 1)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import type { Product } from "@/types/Product";
 
 type Props = {
   products: Product[];
-  highlightId: number | null;
+  highlightId: string | null;
 };
 
 export function ProductTable({ products, highlightId }: Props) {
@@ -23,9 +23,9 @@ export function ProductTable({ products, highlightId }: Props) {
         <tbody>
           {products.map((product) => (
             <tr
-              key={product.id}
+              key={product._id}
               className={`border-b ${
-                product.id === highlightId ? "bg-blue-50 font-semibold" : ""
+                product._id === highlightId ? "bg-blue-50 font-semibold" : ""
               }`}
             >
               <td className="p-2 font-mono">{product.itemCode}</td>

@@ -1,7 +1,8 @@
-import { useForm } from "react-hook-form";
-import axios from "axios";
-import { useState } from "react";
+import orderClient from "@/services/order-client";
+import productClient from "@/services/product-client";
 import type { Product } from "@/types/Product";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 type FormData = {
   orderNumber: string;
@@ -19,9 +20,12 @@ export function OrderForm({ onOrderComplete }: Props) {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const res = await axios.get(
-        `http://localhost:3001/products?itemCode=${data.itemCode}`
-      );
+      const { request } = productClient.getAll<Product>({
+        itemCode: data.itemCode,
+      });
+
+      const res = await request;
+
       const product: Product = res.data[0];
 
       if (!product) {
@@ -33,18 +37,17 @@ export function OrderForm({ onOrderComplete }: Props) {
         setError("Not enough stock available");
         return;
       }
-
       // 1. Log order
-      const orderRes = await axios.post("http://localhost:3001/orders", {
+      const orderRes = await orderClient.create({
         orderNumber: data.orderNumber,
-        productId: product.id,
+        productId: product._id,
         itemCode: product.itemCode,
         quantity: data.quantity,
         date: new Date().toISOString(),
       });
 
       // 2. Update stock
-      await axios.patch(`http://localhost:3001/products/${product.id}`, {
+      productClient.patch(product._id, {
         numberInStock: product.numberInStock - data.quantity,
       });
 

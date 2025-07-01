@@ -1,17 +1,19 @@
-import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { useForm } from "react-hook-form";
+import productClient from "@/services/product-client";
+import receiptClient from "@/services/receipt-client";
 import type { Product } from "@/types/Product";
+import { CanceledError } from "axios";
 
 type FormData = {
   itemCode: string;
-  name?: string;
-  unit?: string;
+  name: string;
+  unit: string;
   quantity: number;
 };
 
 type Props = {
-  onStockUpdate: (updatedProducts: Product[], updatedId: number) => void;
+  onStockUpdate: (updatedProducts: Product[], updatedId: string) => void;
 };
 
 export function ReceiveItemForm({ onStockUpdate }: Props) {
@@ -20,13 +22,20 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
   const itemCode = watch("itemCode");
 
   useEffect(() => {
-    if (itemCode?.trim().length > 0) {
-      axios
-        .get(`http://localhost:3001/products?itemCode=${itemCode}`)
-        .then((res) => {
-          setMatchedProduct(res.data[0] ?? null);
-        })
-        .catch(() => setMatchedProduct(null));
+    if (itemCode?.trim()) {
+      const { request, cancel } = productClient.getAll<Product>({ itemCode });
+
+      request
+        .then((res) => setMatchedProduct(res.data[0] ?? null))
+        .catch((err) => {
+          if (err instanceof CanceledError) return;
+          console.error("Fetch error:", err);
+          setMatchedProduct(null);
+        });
+
+      return () => cancel();
+    } else {
+      setMatchedProduct(null);
     }
   }, [itemCode]);
 
@@ -34,13 +43,13 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
     if (!data.quantity || data.quantity < 1) return;
 
     if (matchedProduct) {
-      await axios.patch(`http://localhost:3001/products/${matchedProduct.id}`, {
+      await productClient.patch<Product>(matchedProduct._id, {
         numberInStock:
           Number(matchedProduct.numberInStock) + Number(data.quantity),
         received: new Date().toISOString().split("T")[0],
       });
     } else {
-      await axios.post("http://localhost:3001/products", {
+      await productClient.create<Omit<Product, "_id">>({
         itemCode: data.itemCode,
         name: data.name,
         unit: data.unit,
@@ -54,14 +63,15 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
     reset();
     setMatchedProduct(null);
 
-    const res = await axios.get("http://localhost:3001/products");
-    const sorted = res.data.sort(
-      (a: Product, b: Product) =>
-        new Date(b.received).getTime() - new Date(a.received).getTime()
+    const { request } = productClient.getAll<Product>();
+    const latest = await request;
+    const sorted = latest.data.sort(
+      (a, b) => new Date(b.received).getTime() - new Date(a.received).getTime()
     );
-    onStockUpdate(sorted, matchedProduct ? matchedProduct.id : sorted[0].id);
+    const updatedId = matchedProduct ? matchedProduct._id : sorted[0]._id;
+    onStockUpdate(sorted, updatedId);
 
-    await axios.post("http://localhost:3001/receipts", {
+    await receiptClient.create({
       itemCode: data.itemCode,
       quantity: data.quantity,
       date: new Date().toISOString(),

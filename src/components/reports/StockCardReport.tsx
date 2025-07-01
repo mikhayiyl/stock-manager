@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import type { Product } from "@/types/Product";
 import { saveAs } from "file-saver";
+import useProducts from "@/hooks/useProducts";
+import useOrders from "@/hooks/useOrders";
+import useReceipts from "@/hooks/useReceipts";
 
 type Entry = {
-  id: string;
+  _id: string;
   itemCode: string;
   quantity: number;
   date: string;
@@ -21,6 +24,9 @@ type GroupedEntry = {
 export function StockCardReport({ filter }: Props) {
   const [grouped, setGrouped] = useState<Map<string, GroupedEntry>>(new Map());
   const [products, setProducts] = useState<Product[]>([]);
+  const { receipts } = useReceipts();
+  const { orders } = useOrders();
+  const { products: productsRes } = useProducts();
 
   const handleExportCSV = () => {
     const rows: string[] = [];
@@ -74,12 +80,6 @@ export function StockCardReport({ filter }: Props) {
     };
 
     const fetchData = async () => {
-      const [receipts, orders, productsRes] = await Promise.all([
-        fetch("http://localhost:3001/receipts").then((res) => res.json()),
-        fetch("http://localhost:3001/orders").then((res) => res.json()),
-        fetch("http://localhost:3001/products").then((res) => res.json()),
-      ]);
-
       const groupedMap = new Map<string, GroupedEntry>();
 
       receipts
@@ -134,7 +134,7 @@ export function StockCardReport({ filter }: Props) {
                 </p>
                 <ul className="text-sm space-y-1">
                   {receipts.map((r) => (
-                    <li key={r.id}>
+                    <li key={r._id}>
                       +{r.quantity} on {new Date(r.date).toLocaleDateString()}
                     </li>
                   ))}
@@ -150,7 +150,7 @@ export function StockCardReport({ filter }: Props) {
                 </p>
                 <ul className="text-sm space-y-1">
                   {orders.map((o) => (
-                    <li key={o.id}>
+                    <li key={o._id}>
                       –{o.quantity} on {new Date(o.date).toLocaleDateString()}
                     </li>
                   ))}

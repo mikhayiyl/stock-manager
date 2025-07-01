@@ -1,33 +1,16 @@
-import { useEffect, useState } from "react";
-
-type Order = {
-  id: number;
-  orderNumber: string;
-  itemCode: string;
-  quantity: number;
-  date: string;
-};
+import useOrders from "@/hooks/useOrders";
+import type { Order } from "@/types/Order";
 
 type Props = {
-  highlightId: number | null;
+  highlightId: string | null;
 };
 
 export function OrderTable({ highlightId }: Props) {
-  const [orders, setOrders] = useState<Order[]>([]);
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
-    const res = await fetch("http://localhost:3001/orders");
-    const data = await res.json();
-    const sorted = data.sort(
-      (a: Order, b: Order) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-    setOrders(sorted);
-  };
+  const { orders } = useOrders();
+  const sorted = orders.sort(
+    (a: Order, b: Order) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
 
   return (
     <div className="bg-white p-4 rounded shadow overflow-x-auto">
@@ -42,11 +25,11 @@ export function OrderTable({ highlightId }: Props) {
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => (
+          {sorted.map((order) => (
             <tr
-              key={order.id}
+              key={order._id}
               className={`border-b ${
-                order.id === highlightId ? "bg-green-50 font-semibold" : ""
+                order._id === highlightId ? "bg-green-50 font-semibold" : ""
               }`}
             >
               <td className="p-2 font-mono">{order.itemCode}</td>

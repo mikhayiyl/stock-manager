@@ -1,5 +1,5 @@
 export type Product = {
-  id: number;
+  _id: string;
   itemCode: string; // Unique identifier (e.g. TIN-ROOF28)
   name: string; // Descriptive product name
   numberInStock: number; // Current available quantity

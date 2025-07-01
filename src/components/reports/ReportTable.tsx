@@ -1,3 +1,6 @@
+import useDamages from "@/hooks/useDamages";
+import useOrders from "@/hooks/useOrders";
+import useReceipts from "@/hooks/useReceipts";
 import { useEffect, useState } from "react";
 
 type Props = {
@@ -17,11 +20,11 @@ export function ReportTable({ filter }: Props) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [receipts, orders, damages] = await Promise.all([
-        fetch("http://localhost:3001/receipts").then((res) => res.json()),
-        fetch("http://localhost:3001/orders").then((res) => res.json()),
-        fetch("http://localhost:3001/damages").then((res) => res.json()),
-      ]);
+      const { receipts } = useReceipts();
+      const { orders } = useOrders();
+      const { damages } = useDamages();
+
+      console.log({ receipts, orders, damages, data: "data......." });
 
       const all: Entry[] = [
         ...receipts.map((r: any) => ({ ...r, type: "received" })),

@@ -1,19 +1,12 @@
-import axios from "axios";
-import { useEffect, useState } from "react";
-import type { Product } from "@/types/Product";
+import useProducts from "@/hooks/useProducts";
 
 export function LatestArrival() {
-  const [latest, setLatest] = useState<Product | null>(null);
+  const { products } = useProducts();
 
-  useEffect(() => {
-    axios.get("http://localhost:3001/products").then((res) => {
-      const sorted = res.data.sort(
-        (a: Product, b: Product) =>
-          new Date(b.received).getTime() - new Date(a.received).getTime()
-      );
-      setLatest(sorted[0]);
-    });
-  }, []);
+  const latest =
+    products.sort(
+      (a, b) => new Date(b.received).getTime() - new Date(a.received).getTime()
+    )[0] || [];
 
   if (!latest) return null;
 

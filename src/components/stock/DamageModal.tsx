@@ -1,12 +1,14 @@
+import damageClient from "@/services/damage-client";
+import productClient from "@/services/product-client";
+import type { Product } from "@/types/Product";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from "@radix-ui/react-dialog";
 import { useState } from "react";
-import axios from "axios";
-import type { Product } from "@/types/Product";
 
 type Props = {
   product: Product;
@@ -22,12 +24,11 @@ export function DamageModal({ product }: Props) {
   ) => {
     e.preventDefault();
     if (!quantity || quantity <= 0) return;
-    return console.log(2);
 
     try {
       // 1. Log the damage entry
-      await axios.post("http://localhost:3001/damages", {
-        productId: product.id,
+      await damageClient.create({
+        productId: product._id,
         itemCode: product.itemCode,
         quantity,
         notes,
@@ -35,16 +36,14 @@ export function DamageModal({ product }: Props) {
       });
 
       // 2. Update product's damage count
-      const res = await axios.put(
-        `http://localhost:3001/products/${product.id}`,
-        {
-          damaged: product.damaged + quantity,
-        }
-      );
+      await productClient.patch(product._id, {
+        damaged: product.damaged + quantity,
+      });
 
-      return console.log(res);
+      // 3. Notify listeners to refresh product list
+      window.dispatchEvent(new Event("products:refresh"));
 
-      // Optional: refresh product list or show toast
+      // 4. Reset and close modal
       setOpen(false);
       setQuantity(0);
       setNotes("");
@@ -60,21 +59,30 @@ export function DamageModal({ product }: Props) {
           Report Damage
         </button>
       </DialogTrigger>
+
       <DialogContent className="bg-white p-6 rounded shadow w-[400px]">
         <DialogTitle className="text-lg font-bold">
           Report Damage: {product.name}
         </DialogTitle>
 
-        <h3 className="text-lg font-bold mb-4">Damage: {product.name}</h3>
-        <div className="space-y-4">
+        <DialogDescription className="text-sm text-gray-500 mb-4">
+          Enter the quantity and optional notes to log damaged stock.
+        </DialogDescription>
+
+        <div className="space-y-4 mt-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Quantity
             </label>
+
             <input
               type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value))}
+              value={quantity || ""}
+              onChange={(e) =>
+                setQuantity(
+                  e.target.value === "" ? 0 : parseInt(e.target.value)
+                )
+              }
               className="border px-2 py-1 w-full rounded"
             />
           </div>

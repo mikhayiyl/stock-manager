@@ -1,16 +1,7 @@
-import type { Product } from "@/types/Product";
-import axios from "axios";
-import { useEffect, useState } from "react";
+import useProducts from "@/hooks/useProducts";
 
 export function SummaryCards() {
-  const [products, setProducts] = useState<Product[]>([]);
-
-  useEffect(() => {
-    axios
-      .get<Product[]>("http://localhost:3001/products")
-      .then((res) => setProducts(res.data))
-      .catch((err) => console.error("Fetch error:", err));
-  }, []);
+  const { products } = useProducts();
 
   const totalItems = products.length;
   const lowStock = products.filter((p) => p.numberInStock < 20).length;

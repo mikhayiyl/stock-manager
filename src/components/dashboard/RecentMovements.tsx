@@ -1,19 +1,12 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import type { Product } from "@/types/Product";
+import useProducts from "@/hooks/useProducts";
 
 export function RecentMovements() {
-  const [products, setProducts] = useState<Product[]>([]);
-
-  useEffect(() => {
-    axios.get<Product[]>("http://localhost:3001/products").then((res) => {
-      const sorted = [...res.data].sort(
-        (a, b) =>
-          new Date(b.received).getTime() - new Date(a.received).getTime()
-      );
-      setProducts(sorted.slice(0, 5));
-    });
-  }, []);
+  const { products } = useProducts();
+  const sorted = [...products]
+    .sort(
+      (a, b) => new Date(b.received).getTime() - new Date(a.received).getTime()
+    )
+    .slice(0, 5);
 
   return (
     <div className="bg-white p-4 rounded shadow">
@@ -29,8 +22,8 @@ export function RecentMovements() {
           </tr>
         </thead>
         <tbody>
-          {products.map((p) => (
-            <tr key={p.id} className="border-b">
+          {sorted.map((p) => (
+            <tr key={p._id} className="border-b">
               <td>{p.itemCode}</td>
               <td>{p.name}</td>
               <td>{p.numberInStock}</td>
