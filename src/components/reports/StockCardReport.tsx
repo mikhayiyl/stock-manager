@@ -4,16 +4,16 @@ import { saveAs } from "file-saver";
 import useProducts from "@/hooks/useProducts";
 import useOrders from "@/hooks/useOrders";
 import useReceipts from "@/hooks/useReceipts";
+import { ReportActions } from "./ReportActions";
+import { StockCard, type Entry } from "./StockCard";
+import { Pagination } from "./Pagination";
+import pdfMake from "pdfmake/build/pdfmake";
+import * as pdfFonts from "pdfmake/build/vfs_fonts";
 
-type Entry = {
-  _id: string;
-  itemCode: string;
-  quantity: number;
-  date: string;
-};
+pdfMake.vfs = pdfFonts.vfs;
 
 type Props = {
-  filter: { from: string; to: string };
+  filter: { from: string; to: string; search: string };
 };
 
 type GroupedEntry = {
@@ -24,14 +24,65 @@ type GroupedEntry = {
 export function StockCardReport({ filter }: Props) {
   const [grouped, setGrouped] = useState<Map<string, GroupedEntry>>(new Map());
   const [products, setProducts] = useState<Product[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const itemsPerPage = 5;
+
   const { receipts } = useReceipts();
   const { orders } = useOrders();
   const { products: productsRes } = useProducts();
 
-  const handleExportCSV = () => {
-    const rows: string[] = [];
+  const isFilterActive = () =>
+    filter.from.trim() !== "" ||
+    filter.to.trim() !== "" ||
+    filter.search.trim() !== "";
 
-    grouped.forEach((entry, itemCode) => {
+  const getEntriesToExport = () => {
+    return isFilterActive()
+      ? filteredEntries
+      : Array.from(grouped.entries()).slice(0, 20); // fallback to latest 20
+  };
+
+  const handleExportCSV = () => {
+    const entriesToExport = getEntriesToExport();
+
+    const rows: string[] = ["Item Code,Item Name,Type,Quantity,Date"];
+
+    entriesToExport.forEach(([itemCode, entry]) => {
+      const product = products.find((p) => p.itemCode === itemCode);
+      const name = product?.name ?? "";
+
+      entry.receipts.forEach((r) => {
+        rows.push(
+          `${itemCode},${name},Received,${r.quantity},${new Date(
+            r.date
+          ).toLocaleDateString()}`
+        );
+      });
+
+      entry.orders.forEach((o) => {
+        rows.push(
+          `${itemCode},${name},Order,${-o.quantity},${new Date(
+            o.date
+          ).toLocaleDateString()}`
+        );
+      });
+
+      //  blank line to separate items
+      rows.push("");
+    });
+
+    const blob = new Blob([rows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    saveAs(blob, `stock_report_${Date.now()}.csv`);
+  };
+
+  const handleExportPDF = () => {
+    const entriesToExport = getEntriesToExport();
+    const rows: any[] = [];
+
+    entriesToExport.forEach(([itemCode, entry]) => {
       const product = products.find((p) => p.itemCode === itemCode);
       const totalReceived = entry.receipts.reduce(
         (sum, r) => sum + r.quantity,
@@ -40,34 +91,86 @@ export function StockCardReport({ filter }: Props) {
       const totalOrdered = entry.orders.reduce((sum, o) => sum + o.quantity, 0);
       const currentStock = product?.numberInStock ?? 0;
 
-      rows.push("");
-      rows.push(`${product?.name ?? itemCode} (${itemCode}),,,`);
-      rows.push("Type,Quantity,Date");
+      rows.push([
+        {
+          text: `${product?.name ?? itemCode} (${itemCode})`,
+          colSpan: 3,
+          bold: true,
+          margin: [0, 10, 0, 4],
+        },
+        {},
+        {},
+      ]);
+      rows.push(["Type", "Quantity", "Date"]);
 
       entry.receipts.forEach((r) => {
-        rows.push(
-          `Received,${r.quantity},${new Date(r.date).toLocaleDateString()}`
-        );
+        rows.push([
+          "Received",
+          r.quantity,
+          new Date(r.date).toLocaleDateString(),
+        ]);
       });
 
       entry.orders.forEach((o) => {
-        rows.push(
-          `Order,-${o.quantity},${new Date(o.date).toLocaleDateString()}`
-        );
+        rows.push([
+          "Order",
+          -o.quantity,
+          new Date(o.date).toLocaleDateString(),
+        ]);
       });
 
-      rows.push(`Totals,Received: ${totalReceived},Orders: ${totalOrdered}`);
-      rows.push(
-        `Remaining Stock Balance:,${currentStock} ${product?.unit ?? ""}`
-      );
+      rows.push([
+        {
+          text: "— Totals —",
+          colSpan: 3,
+          alignment: "center",
+          margin: [0, 10, 0, 4],
+          bold: true,
+        },
+        {},
+        {},
+      ]);
+      rows.push(["Total Received", totalReceived, ""]);
+      rows.push(["Total Ordered", totalOrdered, ""]);
+      rows.push([
+        {
+          text: `Remaining Stock: ${currentStock} ${product?.unit ?? ""}`,
+          colSpan: 3,
+          italics: true,
+          margin: [0, 0, 0, 10],
+        },
+        {},
+        {},
+      ]);
     });
 
-    const csvContent = rows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, `stock_report_${Date.now()}.csv`);
+    const docDefinition = {
+      content: [
+        { text: "Stock Movement Report", style: "header" },
+        {
+          table: {
+            headerRows: 1,
+            widths: ["*", "auto", "auto"],
+            body: rows,
+          },
+          layout: "lightHorizontalLines",
+        },
+      ],
+      styles: {
+        header: {
+          fontSize: 18,
+          bold: true,
+          margin: [0, 0, 0, 10] as [number, number, number, number],
+        },
+      },
+    };
+
+    pdfMake.createPdf(docDefinition).download(`stock_report_${Date.now()}.pdf`);
   };
 
   useEffect(() => {
+    if (receipts.length === 0 && orders.length === 0) return;
+
     const isInRange = (dateStr: string) => {
       const entryTime = new Date(dateStr).getTime();
       const fromTime = filter.from
@@ -80,93 +183,104 @@ export function StockCardReport({ filter }: Props) {
     };
 
     const fetchData = async () => {
+      setLoading(true);
       const groupedMap = new Map<string, GroupedEntry>();
 
-      receipts
-        .filter((r: Entry) => isInRange(r.date))
-        .forEach((r: Entry) => {
-          if (!groupedMap.has(r.itemCode))
-            groupedMap.set(r.itemCode, { receipts: [], orders: [] });
-          groupedMap.get(r.itemCode)!.receipts.push(r);
-        });
+      const filteredReceipts = isFilterActive()
+        ? receipts.filter((r) => isInRange(r.date))
+        : [...receipts]
+            .sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            )
+            .slice(0, 20);
 
-      orders
-        .filter((o: Entry) => isInRange(o.date))
-        .forEach((o: Entry) => {
-          if (!groupedMap.has(o.itemCode))
-            groupedMap.set(o.itemCode, { receipts: [], orders: [] });
-          groupedMap.get(o.itemCode)!.orders.push(o);
-        });
+      const filteredOrders = isFilterActive()
+        ? orders.filter((o) => isInRange(o.date))
+        : [...orders]
+            .sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            )
+            .slice(0, 20);
+
+      filteredReceipts.forEach((r) => {
+        if (!groupedMap.has(r.itemCode))
+          groupedMap.set(r.itemCode, { receipts: [], orders: [] });
+        groupedMap.get(r.itemCode)!.receipts.push(r);
+      });
+
+      filteredOrders.forEach((o) => {
+        if (!groupedMap.has(o.itemCode))
+          groupedMap.set(o.itemCode, { receipts: [], orders: [] });
+        groupedMap.get(o.itemCode)!.orders.push(o);
+      });
 
       setGrouped(groupedMap);
       setProducts(productsRes);
+      setCurrentPage(1);
+      setLoading(false);
     };
 
     fetchData();
-  }, [filter]);
+  }, [filter, receipts, orders]);
+
+  const filteredEntries = Array.from(grouped.entries()).filter(([itemCode]) => {
+    const product = products.find((p) => p.itemCode === itemCode);
+    const search = filter.search.toLowerCase();
+    return (
+      itemCode.toLowerCase().includes(search) ||
+      product?.name?.toLowerCase().includes(search)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
+  const paginatedEntries = filteredEntries.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  if (loading) {
+    return <p className="text-center text-gray-500">Loading report...</p>;
+  }
 
   return (
     <div className="space-y-6">
-      <button
-        onClick={handleExportCSV}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
-      >
-        Export to CSV
-      </button>
+      <ReportActions
+        onExportCSV={handleExportCSV}
+        onExportPDF={handleExportPDF}
+        onPrint={() => window.print()}
+      />
 
-      {Array.from(grouped.entries()).map(([itemCode, { receipts, orders }]) => {
-        const totalReceived = receipts.reduce((sum, r) => sum + r.quantity, 0);
-        const totalOrdered = orders.reduce((sum, o) => sum + o.quantity, 0);
-        const product = products.find((p) => p.itemCode === itemCode);
-        const currentStock = product?.numberInStock ?? 0;
-
-        return (
-          <div key={itemCode} className="border p-4 rounded shadow bg-white">
-            <h4 className="font-bold text-lg mb-2">
-              {product?.name ?? itemCode}{" "}
-              <span className="text-sm text-gray-500">({itemCode})</span>
-            </h4>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 mb-1">
-                  Receipts
-                </p>
-                <ul className="text-sm space-y-1">
-                  {receipts.map((r) => (
-                    <li key={r._id}>
-                      +{r.quantity} on {new Date(r.date).toLocaleDateString()}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2 font-medium text-blue-700">
-                  Total Received: {totalReceived}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold text-gray-600 mb-1">
-                  Orders
-                </p>
-                <ul className="text-sm space-y-1">
-                  {orders.map((o) => (
-                    <li key={o._id}>
-                      –{o.quantity} on {new Date(o.date).toLocaleDateString()}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2 font-medium text-red-700">
-                  Total Ordered: {totalOrdered}
-                </p>
-              </div>
-            </div>
-
-            <p className="mt-4 font-semibold text-green-700">
-              Remaining Stock Balance: {currentStock} {product?.unit ?? ""}
-            </p>
+      {!isFilterActive() && grouped.size === 0 ? (
+        <p className="text-center text-gray-500">
+          Showing latest receipts. Apply filters to refine.
+        </p>
+      ) : loading ? (
+        <p className="text-center text-gray-500">Loading report...</p>
+      ) : paginatedEntries.length === 0 ? (
+        <p className="text-center text-gray-500">No entries found.</p>
+      ) : (
+        <div>
+          <div>
+            {paginatedEntries.map(([itemCode, { receipts, orders }]) => (
+              <StockCard
+                key={itemCode}
+                itemCode={itemCode}
+                receipts={receipts}
+                orders={orders}
+                product={products.find((p) => p.itemCode === itemCode)}
+              />
+            ))}
           </div>
-        );
-      })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
 }

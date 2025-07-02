@@ -3,9 +3,14 @@ import { ReportFilter } from "@/components/reports/ReportFilter";
 import { StockCardReport } from "@/components/reports/StockCardReport";
 
 export default function ReportPage() {
-  const [filter, setFilter] = useState<{ from: string; to: string }>({
+  const [filter, setFilter] = useState<{
+    from: string;
+    to: string;
+    search: string;
+  }>({
     from: "",
     to: "",
+    search: "",
   });
 
   return (

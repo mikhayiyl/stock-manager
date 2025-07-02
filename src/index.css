@@ -118,3 +118,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  button,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  .print-page {
+    page-break-after: always;
+  }
+}

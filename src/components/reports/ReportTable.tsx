@@ -2,30 +2,20 @@ import useDamages from "@/hooks/useDamages";
 import useOrders from "@/hooks/useOrders";
 import useReceipts from "@/hooks/useReceipts";
 import { useEffect, useState } from "react";
+import type { Entry } from "./StockCard";
 
 type Props = {
   filter: { from: string; to: string };
 };
 
-type Entry = {
-  id: number;
-  type: "received" | "order" | "damage";
-  itemCode: string;
-  quantity: number;
-  date: string;
-};
-
 export function ReportTable({ filter }: Props) {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const { receipts } = useReceipts();
+  const { orders } = useOrders();
+  const { damages } = useDamages();
 
   useEffect(() => {
     const fetchData = async () => {
-      const { receipts } = useReceipts();
-      const { orders } = useOrders();
-      const { damages } = useDamages();
-
-      console.log({ receipts, orders, damages, data: "data......." });
-
       const all: Entry[] = [
         ...receipts.map((r: any) => ({ ...r, type: "received" })),
         ...orders.map((o: any) => ({ ...o, type: "order" })),
@@ -62,7 +52,7 @@ export function ReportTable({ filter }: Props) {
         </thead>
         <tbody>
           {entries.map((entry) => (
-            <tr key={`${entry.type}-${entry.id}`} className="border-b">
+            <tr key={`${entry.type}-${entry._id}`} className="border-b">
               <td className="p-2 capitalize">{entry.type}</td>
               <td className="p-2 font-mono">{entry.itemCode}</td>
               <td className="p-2">{entry.quantity}</td>
