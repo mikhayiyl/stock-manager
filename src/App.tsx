@@ -8,6 +8,7 @@ import ReportPage from "./pages/ReportPage";
 import StockListPage from "./pages/StockListPage";
 import { ProductExceptionsReport } from "./pages/ProductsAlert";
 import { SalesTrendReport } from "./pages/SalesTrend";
+import { ProductPage } from "./pages/ProductPage";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/reports" element={<ReportPage />} />
           <Route path="/alert" element={<ProductExceptionsReport />} />
           <Route path="/salestrend" element={<SalesTrendReport />} />
+          <Route path="/product/:itemCode" element={<ProductPage />} />
         </Routes>
       </Layout>
     </>
