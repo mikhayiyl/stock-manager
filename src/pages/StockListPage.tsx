@@ -1,6 +1,7 @@
 import { DamageModal } from "@/components/stock/DamageModal";
 import useProducts from "@/hooks/useProducts";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function StockListPage() {
   const { products: allProducts } = useProducts();
@@ -60,8 +61,16 @@ export default function StockListPage() {
                     : "border-b"
                 }
               >
-                <td className="p-3 font-mono">{product.itemCode}</td>
-                <td className="p-3">{product.name}</td>
+                <td className="p-3 text-blue-600 underline">
+                  <Link to={`/product/${product.itemCode}`}>
+                    {product.itemCode}
+                  </Link>
+                </td>
+                <td className="p-3 text-blue-600 underline">
+                  <Link to={`/product/${product.itemCode}`}>
+                    {product.name}
+                  </Link>
+                </td>
                 <td className="p-3">{product.numberInStock}</td>
                 <td className="p-3">{product.damaged}</td>
                 <td className="p-3">{product.unit}</td>

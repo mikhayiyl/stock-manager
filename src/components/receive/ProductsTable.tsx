@@ -1,4 +1,5 @@
 import type { Product } from "@/types/Product";
+import { Link } from "react-router-dom";
 
 type Props = {
   products: Product[];
@@ -28,8 +29,14 @@ export function ProductTable({ products, highlightId }: Props) {
                 product._id === highlightId ? "bg-blue-50 font-semibold" : ""
               }`}
             >
-              <td className="p-2 font-mono">{product.itemCode}</td>
-              <td className="p-2">{product.name}</td>
+              <td className="p-2 text-blue-600 underline">
+                <Link to={`/product/${product.itemCode}`}>
+                  {product.itemCode}
+                </Link>
+              </td>
+              <td className="p-3 text-blue-600 underline">
+                <Link to={`/product/${product.itemCode}`}>{product.name}</Link>
+              </td>
               <td className="p-2">{product.numberInStock}</td>
               <td className="p-2">{product.damaged}</td>
               <td className="p-2">{product.unit}</td>
