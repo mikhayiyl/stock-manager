@@ -6,9 +6,10 @@ const links = [
   { to: "/", label: "Dashboard" },
   { to: "/stock", label: "Stock List" },
   { to: "/orders", label: "Orders" },
-  { to: "/reports", label: "Reports" },
   { to: "/receive", label: "Receive Items" },
   { to: "/alert", label: "Product Alert Report" },
+  { to: "/salestrend", label: "Sales Trend" },
+  { to: "/reports☻", label: "Reports" },
   { to: "/logout", label: "Sign out" },
 ];
 

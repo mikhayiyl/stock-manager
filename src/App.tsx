@@ -7,6 +7,7 @@ import ReceivePage from "./pages/ReceivePage";
 import ReportPage from "./pages/ReportPage";
 import StockListPage from "./pages/StockListPage";
 import { ProductExceptionsReport } from "./pages/ProductsAlert";
+import { SalesTrendReport } from "./pages/SalesTrend";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/reports" element={<ReportPage />} />
           <Route path="/alert" element={<ProductExceptionsReport />} />
+          <Route path="/salestrend" element={<SalesTrendReport />} />
         </Routes>
       </Layout>
     </>
