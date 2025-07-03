@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
-const links = [
+const baseLinks = [
   { to: "/", label: "Dashboard" },
   { to: "/stock", label: "Stock List" },
   { to: "/orders", label: "Orders" },
@@ -10,11 +10,17 @@ const links = [
   { to: "/alert", label: "Product Alert Report" },
   { to: "/salestrend", label: "Sales Trend" },
   { to: "/reports", label: "Reports" },
-  { to: "/logout", label: "Sign out" },
 ];
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
+  const isLoggedIn = Boolean(localStorage.getItem("x-auth-token"));
+
+  const authLink = isLoggedIn
+    ? { to: "/logout", label: "Sign out" }
+    : { to: "/login", label: "Sign in" };
+
+  const links = [...baseLinks, authLink];
 
   return (
     <>
@@ -30,7 +36,6 @@ export default function Sidebar() {
         )}
       </button>
 
-      {/* Sidebar */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-40 w-64 bg-background border-r
@@ -52,7 +57,7 @@ export default function Sidebar() {
                     : "hover:bg-primary/10"
                 }`
               }
-              onClick={() => setOpen(false)} // close menu on mobile link click
+              onClick={() => setOpen(false)}
             >
               {label}
             </NavLink>
