@@ -13,6 +13,8 @@ import { LogoutPage } from "./pages/Logout";
 import { LoginPage } from "./pages/Login";
 
 function App() {
+  //dynamic page title
+  useDocumentTitle();
   return (
     <>
       <Toaster richColors position="top-right" />
@@ -46,6 +48,7 @@ export default App;
 
 import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
+import { useDocumentTitle } from "./hooks/useDocumentTitle";
 
 export function PublicRoute({ children }: { children: ReactNode }) {
   const isLoggedIn = Boolean(localStorage.getItem("x-auth-token"));

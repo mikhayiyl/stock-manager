@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import useProducts from "@/hooks/useProducts";
 import useOrders from "@/hooks/useOrders";
 import useDamages from "@/hooks/useDamages";
@@ -15,6 +15,11 @@ export function ProductPage() {
   const { damages } = useDamages();
 
   const product = products.find((p) => p.itemCode === itemCode);
+
+  // page title
+  useEffect(() => {
+    document.title = `${product?.name}`;
+  }, [product?.name]);
 
   const now = new Date();
   const thisMonth = now.getMonth();
