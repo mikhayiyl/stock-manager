@@ -13,7 +13,7 @@ export function LoginPage() {
     try {
       const res = await apiClient.post("/auth", { email, password });
       localStorage.setItem("x-auth-token", res.data);
-      // window.location.href = "/";
+      window.location.href = "/";
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
     }
