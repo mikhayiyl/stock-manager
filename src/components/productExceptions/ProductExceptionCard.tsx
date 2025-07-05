@@ -5,9 +5,15 @@ type Props = {
   product: Product;
   damages: Entry[];
   status: string[];
+  severity?: "Low" | "Warning" | "Critical";
 };
 
-export function ProductExceptionCard({ product, damages, status }: Props) {
+export function ProductExceptionCard({
+  product,
+  damages,
+  status,
+  severity,
+}: Props) {
   const totalDamaged = damages.reduce((sum, d) => sum + d.quantity, 0);
 
   return (
@@ -24,21 +30,40 @@ export function ProductExceptionCard({ product, damages, status }: Props) {
             </p>
           )}
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {status.map((s) => (
+
+        <div className="flex flex-col items-end gap-2">
+          {/* Status Tags */}
+          <div className="flex gap-2 flex-wrap justify-end">
+            {status.map((s) => (
+              <span
+                key={s}
+                className={`text-xs px-2 py-1 rounded-full ${
+                  s === "Damaged"
+                    ? "bg-red-100 text-red-700"
+                    : s === "Low Stock"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+
+          {/* Severity Badge */}
+          {severity && (
             <span
-              key={s}
-              className={`text-xs px-2 py-1 rounded-full ${
-                s === "Damaged"
-                  ? "bg-red-100 text-red-700"
-                  : s === "Low Stock"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-gray-200 text-gray-700"
+              className={`text-xs px-2 py-1 rounded font-semibold ${
+                severity === "Critical"
+                  ? "bg-red-200 text-red-800"
+                  : severity === "Warning"
+                  ? "bg-yellow-200 text-yellow-800"
+                  : "bg-orange-100 text-orange-800"
               }`}
             >
-              {s}
+              {severity} Stock
             </span>
-          ))}
+          )}
         </div>
       </div>
 

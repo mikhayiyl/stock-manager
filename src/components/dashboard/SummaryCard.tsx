@@ -1,3 +1,4 @@
+import { useLowStockAnalysis } from "@/hooks/useLowStockAnalysis";
 import useOrders from "@/hooks/useOrders";
 import useProducts from "@/hooks/useProducts";
 import type { Order } from "@/types/Order";
@@ -5,7 +6,6 @@ import type { Order } from "@/types/Order";
 export function SummaryCards() {
   const { products } = useProducts();
   const { orders } = useOrders();
-
   // Total number of distinct products
   const totalItems = products.length;
 
@@ -15,42 +15,11 @@ export function SummaryCards() {
   // Count of products that are completely out of stock
   const notInStock = products.filter((p) => p.numberInStock === 0).length;
 
-  //Demand-aware low stock logic
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now);
-  thirtyDaysAgo.setDate(now.getDate() - 30);
+  //Use shared low stock logic
+  const { isLowStock } = useLowStockAnalysis(orders);
+  const lowStock = products.filter(isLowStock).length;
 
-  // Step 1: Build a map of itemCode → total quantity sold in the last 30 days
-  const salesMap = new Map<string, number>();
-  orders.forEach((o) => {
-    const orderDate = new Date(o.date);
-    if (orderDate >= thirtyDaysAgo) {
-      salesMap.set(o.itemCode, (salesMap.get(o.itemCode) ?? 0) + o.quantity);
-    }
-  });
-
-  // Step 2: Define dynamic buffer days based on sales velocity
-  const getBufferDays = (dailyRate: number): number => {
-    if (dailyRate >= 5) return 14; // fast movers → 2 weeks buffer
-    if (dailyRate >= 1) return 7; // moderate movers → 1 week
-    return 3; // slow movers → minimal buffer
-  };
-
-  // Step 3: Count products that are low in stock based on buffer coverage
-  const lowStock = products.filter((p) => {
-    const total30DaySales = salesMap.get(p.itemCode) ?? 0;
-
-    // Skip products with very low or no recent sales
-    if (total30DaySales < 3) return false;
-
-    const dailyRate = total30DaySales / 30;
-    const bufferDays = getBufferDays(dailyRate);
-    const requiredStock = Math.ceil(dailyRate * bufferDays);
-
-    return p.numberInStock <= requiredStock;
-  }).length;
-
-  // Step 4: Rank products by total quantity ordered (all time)
+  // Rank products by total quantity ordered (all time)
   const orderMap = new Map<string, number>();
   orders.forEach((o: Order) => {
     orderMap.set(o.itemCode, (orderMap.get(o.itemCode) ?? 0) + o.quantity);
