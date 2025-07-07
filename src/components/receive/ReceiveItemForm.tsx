@@ -4,6 +4,7 @@ import productClient from "@/services/product-client";
 import receiptClient from "@/services/receipt-client";
 import type { Product } from "@/types/Product";
 import { CanceledError } from "axios";
+import { toast } from "sonner";
 
 type FormData = {
   itemCode: string;
@@ -13,7 +14,7 @@ type FormData = {
 };
 
 type Props = {
-  onStockUpdate: (updatedProducts: Product[], updatedId: string) => void;
+  onStockUpdate: (updatedId: string) => void;
 };
 
 export function ReceiveItemForm({ onStockUpdate }: Props) {
@@ -42,14 +43,17 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
   const onSubmit = async (data: FormData) => {
     if (!data.quantity || data.quantity < 1) return;
 
+    let updatedId: string;
+
     if (matchedProduct) {
       await productClient.patch<Product>(matchedProduct._id, {
         numberInStock:
           Number(matchedProduct.numberInStock) + Number(data.quantity),
         received: new Date().toISOString().split("T")[0],
       });
+      updatedId = matchedProduct._id;
     } else {
-      await productClient.create<Omit<Product, "_id">>({
+      const newProduct = await productClient.create<Omit<Product, "_id">>({
         itemCode: data.itemCode,
         name: data.name,
         unit: data.unit,
@@ -57,19 +61,18 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
         damaged: 0,
         received: new Date().toISOString().split("T")[0],
       });
+      updatedId = newProduct.data._id;
     }
 
-    alert("Stock received successfully");
+    toast.success("Stock received successfully");
     reset();
     setMatchedProduct(null);
 
-    const { request } = productClient.getAll<Product>();
-    const latest = await request;
-    const sorted = latest.data.sort(
-      (a, b) => new Date(b.received).getTime() - new Date(a.received).getTime()
-    );
-    const updatedId = matchedProduct ? matchedProduct._id : sorted[0]._id;
-    onStockUpdate(sorted, updatedId);
+    //useProducts hook handle the refresh
+    window.dispatchEvent(new Event("products:refresh"));
+
+    // notify parent for highlight
+    onStockUpdate(updatedId);
 
     await receiptClient.create({
       itemCode: data.itemCode,

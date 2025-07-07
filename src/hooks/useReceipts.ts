@@ -5,18 +5,21 @@ import { useEffect, useState } from "react";
 
 const useReceipts = () => {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    setIsLoading(true);
     const { request, cancel } = receiptClient.getAll<Receipt>();
     request
       .then((res) => setReceipts(res.data))
       .catch((err) => {
         if (err instanceof CanceledError) return;
         console.error("Fetch error:", err);
-      });
+      })
+      .finally(() => setIsLoading(false));
     return () => cancel();
   }, []);
-  return { receipts };
+  return { receipts, isLoading };
 };
 
 export default useReceipts;
