@@ -1,4 +1,4 @@
-import { ProductTable } from "@/components/receive/ProductsTable";
+import ProductTable from "@/components/receive/ProductsTable";
 import { ReceiveItemForm } from "@/components/receive/ReceiveItemForm";
 import { useState } from "react";
 

@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import productClient from "@/services/product-client";
 import receiptClient from "@/services/receipt-client";
 import type { Product } from "@/types/Product";
 import { CanceledError } from "axios";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 type FormData = {
@@ -41,6 +41,9 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
   }, [itemCode]);
 
   const onSubmit = async (data: FormData) => {
+    const token = localStorage.getItem("x-auth-token");
+    if (!token) return toast.error("access denied");
+
     if (!data.quantity || data.quantity < 1) return;
 
     let updatedId: string;
@@ -68,7 +71,8 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
     reset();
     setMatchedProduct(null);
 
-    //useProducts hook handle the refresh
+    // hook handle the refresh
+    window.dispatchEvent(new Event("receipts:refresh"));
     window.dispatchEvent(new Event("products:refresh"));
 
     // notify parent for highlight

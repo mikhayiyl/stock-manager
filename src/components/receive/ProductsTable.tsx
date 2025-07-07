@@ -6,33 +6,28 @@ type Props = {
   highlightId: string | null;
 };
 
-export function ProductTable({ highlightId }: Props) {
+export default function ProductTable({ highlightId }: Props) {
   const { products, isLoading: loadingProducts } = useProducts();
   const { receipts, isLoading: loadingReceipts } = useReceipts();
 
   const isLoading = loadingProducts || loadingReceipts;
   const hasLoaded = !loadingProducts && !loadingReceipts;
-  const isEmpty = hasLoaded && products.length === 0;
+  const isEmpty = hasLoaded && receipts.length === 0;
 
   if (isLoading) {
     return (
       <div className="bg-white p-4 rounded shadow overflow-x-auto">
-        <h3 className="text-lg font-semibold mb-4">Latest Received Products</h3>
+        <h3 className="text-lg font-semibold mb-4">Recent Receipts</h3>
         <table className="min-w-full text-sm">
           <thead className="bg-gray-100 text-left">
             <tr>
-              {[
-                "Item Code",
-                "Name",
-                "Quantity",
-                "Stock",
-                "Unit",
-                "Last Received",
-              ].map((header) => (
-                <th key={header} className="p-2">
-                  {header}
-                </th>
-              ))}
+              {["Item Code", "Name", "Quantity", "Stock", "Unit", "Date"].map(
+                (header) => (
+                  <th key={header} className="p-2">
+                    {header}
+                  </th>
+                )
+              )}
             </tr>
           </thead>
           <tbody>
@@ -54,14 +49,14 @@ export function ProductTable({ highlightId }: Props) {
   if (isEmpty) {
     return (
       <div className="bg-white p-4 rounded shadow text-center text-gray-500 py-10">
-        No arrivals yet.
+        No receipts found.
       </div>
     );
   }
 
   return (
     <div className="bg-white p-4 rounded shadow overflow-x-auto">
-      <h3 className="text-lg font-semibold mb-4">Latest Received Products</h3>
+      <h3 className="text-lg font-semibold mb-4">Recent Receipts</h3>
       <table className="min-w-full text-sm">
         <thead className="bg-gray-100 text-left">
           <tr>
@@ -70,44 +65,35 @@ export function ProductTable({ highlightId }: Props) {
             <th className="p-2">Quantity</th>
             <th className="p-2">Stock</th>
             <th className="p-2">Unit</th>
-            <th className="p-2">Last Received</th>
+            <th className="p-2">Date</th>
           </tr>
         </thead>
         <tbody>
-          {products.map((product) => {
-            const latestReceipt = receipts
-              .filter((r) => r.itemCode === product.itemCode)
-              .sort(
-                (a, b) =>
-                  new Date(b.date).getTime() - new Date(a.date).getTime()
-              )[0];
+          {receipts.map((receipt) => {
+            const product = products.find(
+              (p) => p.itemCode === receipt.itemCode
+            );
 
             return (
               <tr
-                key={product._id}
+                key={receipt._id}
                 className={`border-b ${
-                  product._id === highlightId
+                  receipt._id === highlightId
                     ? "bg-orange-300 font-semibold"
                     : ""
                 }`}
               >
                 <td className="p-2 text-blue-600 underline">
-                  <Link to={`/product/${product.itemCode}`}>
-                    {product.itemCode}
+                  <Link to={`/product/${receipt.itemCode}`}>
+                    {receipt.itemCode}
                   </Link>
                 </td>
-                <td className="p-2 text-blue-600 underline">
-                  <Link to={`/product/${product.itemCode}`}>
-                    {product.name}
-                  </Link>
-                </td>
-                <td className="p-2">{latestReceipt?.quantity ?? "—"}</td>
-                <td className="p-2">{product.numberInStock}</td>
-                <td className="p-2">{product.unit}</td>
+                <td className="p-2">{product?.name ?? "—"}</td>
+                <td className="p-2">{receipt.quantity}</td>
+                <td className="p-2">{product?.numberInStock ?? "—"}</td>
+                <td className="p-2">{product?.unit ?? "—"}</td>
                 <td className="p-2">
-                  {latestReceipt?.date
-                    ? new Date(latestReceipt.date).toLocaleDateString()
-                    : "—"}
+                  {new Date(receipt.date).toLocaleDateString()}
                 </td>
               </tr>
             );

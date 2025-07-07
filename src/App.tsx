@@ -36,6 +36,14 @@ function App() {
               </PublicRoute>
             }
           />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <RegisterPage />
+              </PublicRoute>
+            }
+          />
           <Route path="/logout" element={<LogoutPage />} />
           <Route path="/product/:itemCode" element={<ProductPage />} />
         </Routes>
@@ -49,6 +57,7 @@ export default App;
 import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
+import { RegisterPage } from "./pages/RegisterPage";
 
 export function PublicRoute({ children }: { children: ReactNode }) {
   const isLoggedIn = Boolean(localStorage.getItem("x-auth-token"));

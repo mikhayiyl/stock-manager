@@ -7,9 +7,10 @@ const useReceipts = () => {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
+  const fetchReceipts = () => {
     setIsLoading(true);
     const { request, cancel } = receiptClient.getAll<Receipt>();
+
     request
       .then((res) => setReceipts(res.data))
       .catch((err) => {
@@ -17,8 +18,24 @@ const useReceipts = () => {
         console.error("Fetch error:", err);
       })
       .finally(() => setIsLoading(false));
-    return () => cancel();
+
+    return cancel;
+  };
+
+  useEffect(() => {
+    const cancel = fetchReceipts();
+
+    const handleRefresh = () => {
+      fetchReceipts();
+    };
+
+    window.addEventListener("receipts:refresh", handleRefresh);
+    return () => {
+      window.removeEventListener("receipts:refresh", handleRefresh);
+      cancel?.();
+    };
   }, []);
+
   return { receipts, isLoading };
 };
 
