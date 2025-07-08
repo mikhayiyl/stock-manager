@@ -1,18 +1,15 @@
+import type { User } from "@/types/User";
 import { jwtDecode } from "jwt-decode";
 
-type JwtPayload = {
-  role?: string;
-  [key: string]: any;
-};
-
-export function getUserRole(): string | null {
+export default function getAuthUser(): User | null {
   const token = localStorage.getItem("x-auth-token");
   if (!token) return null;
 
   try {
-    const decoded = jwtDecode<JwtPayload>(token);
-    return decoded.role || null;
-  } catch {
+    const decoded = jwtDecode<User>(token);
+    return decoded;
+  } catch (error) {
+    console.error("Token decoding failed:", error);
     return null;
   }
 }

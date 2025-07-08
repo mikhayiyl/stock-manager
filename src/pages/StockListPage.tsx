@@ -1,6 +1,6 @@
 import { DamageModal } from "@/components/stock/DamageModal";
 import useProducts from "@/hooks/useProducts";
-import { getUserRole } from "@/lib/auth";
+import getAuthUser from "@/lib/auth";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -24,7 +24,7 @@ export default function StockListPage() {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  const isAdmin = getUserRole() === "admin";
+  const isAdmin = getAuthUser()?.isAdmin;
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,4 @@
 import damageClient from "@/services/damage-client";
-import productClient from "@/services/product-client";
 import type { Product } from "@/types/Product";
 import {
   Dialog,
@@ -26,7 +25,6 @@ export function DamageModal({ product }: Props) {
     if (!quantity || quantity <= 0) return;
 
     try {
-      // 1. Log the damage entry
       await damageClient.create({
         productId: product._id,
         itemCode: product.itemCode,
@@ -35,15 +33,7 @@ export function DamageModal({ product }: Props) {
         date: new Date().toISOString(),
       });
 
-      // 2. Update product's damage count
-      await productClient.patch(product._id, {
-        damaged: product.damaged + quantity,
-      });
-
-      // 3. Notify listeners to refresh product list
       window.dispatchEvent(new Event("products:refresh"));
-
-      // 4. Reset and close modal
       setOpen(false);
       setQuantity(0);
       setNotes("");
