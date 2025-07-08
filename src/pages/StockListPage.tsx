@@ -1,5 +1,6 @@
 import { DamageModal } from "@/components/stock/DamageModal";
 import useProducts from "@/hooks/useProducts";
+import { getUserRole } from "@/lib/auth";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -23,6 +24,8 @@ export default function StockListPage() {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
+  const isAdmin = getUserRole() === "admin";
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Stock List</h2>
@@ -33,7 +36,7 @@ export default function StockListPage() {
         value={search}
         onChange={(e) => {
           setSearch(e.target.value);
-          setCurrentPage(1); // reset to page 1 on search
+          setCurrentPage(1);
         }}
         className="w-full max-w-md border px-4 py-2 rounded shadow-sm"
       />
@@ -48,7 +51,7 @@ export default function StockListPage() {
               <th className="p-3">Damaged</th>
               <th className="p-3">Unit</th>
               <th className="p-3">Last Received</th>
-              <th className="p-3">Actions</th>
+              {isAdmin && <th className="p-3">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -76,7 +79,7 @@ export default function StockListPage() {
                 <td className="p-3">{product.unit}</td>
                 <td className="p-3">{product.received}</td>
                 <td className="p-3">
-                  <DamageModal product={product} />
+                  {isAdmin && <DamageModal product={product} />}
                 </td>
               </tr>
             ))}

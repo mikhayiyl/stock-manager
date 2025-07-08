@@ -1,19 +1,26 @@
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import apiClient from "@/services/api-client";
 import { useState } from "react";
 
-type FormData = {
-  email: string;
-  password: string;
-};
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type FormData = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>();
-  const [error, setError] = useState("");
+  } = useForm<FormData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const [error, setError] = useState<string | null>("");
 
   const onSubmit = async (data: FormData) => {
     setError("");
@@ -23,7 +30,8 @@ export function LoginPage() {
       localStorage.setItem("x-auth-token", res.data);
       window.location.href = "/";
     } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed");
+      if (err.status == 400) setError("Invalid credentials");
+      else setError("An expected error occured");
     }
   };
 
@@ -39,7 +47,7 @@ export function LoginPage() {
         <input
           type="email"
           placeholder="Email"
-          {...register("email", { required: "Email is required" })}
+          {...register("email")}
           className="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         {errors.email && (
@@ -49,7 +57,7 @@ export function LoginPage() {
         <input
           type="password"
           placeholder="Password"
-          {...register("password", { required: "Password is required" })}
+          {...register("password")}
           className="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         {errors.password && (

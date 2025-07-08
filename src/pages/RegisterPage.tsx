@@ -1,14 +1,23 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import apiClient from "@/services/api-client";
 import { useState } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
+import { z } from "zod";
 
-type FormData = {
-  username: string;
-  email: string;
-  password: string;
-  confirm: string;
-};
+const schema = z
+  .object({
+    username: z.string().min(5, "Username must be at least 5 characters"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirm: z.string(),
+  })
+  .refine((data) => data.password === data.confirm, {
+    message: "Passwords do not match",
+    path: ["confirm"],
+  });
+
+type FormData = z.infer<typeof schema>;
 
 export function RegisterPage() {
   const {
@@ -17,7 +26,9 @@ export function RegisterPage() {
     reset,
     watch,
     formState: { errors },
-  } = useForm<FormData>();
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -42,7 +53,8 @@ export function RegisterPage() {
       reset();
       window.location.href = "/";
     } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed");
+      if (err.status == 400) setError("Email Already Registered try to login");
+      else setError("An expected error occured");
     }
   };
 
