@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import orderClient from "@/services/order-client";
 import productClient from "@/services/product-client";
 import type { Product } from "@/types/Product";
@@ -6,19 +7,33 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-type FormData = {
-  orderNumber: string;
-  itemCode: string;
-  quantity: number;
-};
+import { z } from "zod";
+
+const orderSchema = z.object({
+  orderNumber: z.string().min(6, "Order number must be atleast 6 characters"),
+  itemCode: z.string().min(5, "Item code must be atleast 5 digits"),
+  quantity: z
+    .number({ invalid_type_error: "Quantity must be a number" })
+    .min(1, "Quantity must be at least 1"),
+});
+
+type FormData = z.infer<typeof orderSchema>;
 
 type Props = {
   onOrderComplete: (orderId: string) => void;
 };
 
 export function OrderForm({ onOrderComplete }: Props) {
-  const { register, handleSubmit, watch, reset, setFocus } =
-    useForm<FormData>();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    setFocus,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(orderSchema),
+  });
 
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,19 +71,7 @@ export function OrderForm({ onOrderComplete }: Props) {
         return;
       }
 
-      if (matchedProduct.numberInStock === 0) {
-        setError("This item is out of stock");
-        toast.error("This item is out of stock");
-        return;
-      }
-
-      if (data.quantity > matchedProduct.numberInStock) {
-        setError("Not enough stock available");
-        toast.error("Not enough stock available");
-        return;
-      }
-
-      const orderRes = await orderClient.create({
+      const res = await orderClient.create({
         orderNumber: data.orderNumber,
         productId: matchedProduct._id,
         itemCode: matchedProduct.itemCode,
@@ -76,21 +79,18 @@ export function OrderForm({ onOrderComplete }: Props) {
         date: new Date().toISOString(),
       });
 
-      await productClient.patch(matchedProduct._id, {
-        numberInStock: matchedProduct.numberInStock - data.quantity,
-      });
-
       window.dispatchEvent(new Event("orders:refresh"));
       window.dispatchEvent(new Event("products:refresh"));
 
-      onOrderComplete(orderRes.data.id);
+      onOrderComplete(res.data.id);
       reset();
       setMatchedProduct(null);
       setError(null);
       toast.success("Order processed successfully");
-    } catch (err) {
-      setError("Something went wrong");
-      toast.error("Something went wrong");
+    } catch (err: any) {
+      const message = err.response?.data || "Something went wrong";
+      setError(message);
+      toast.error(message);
     }
   };
 
@@ -102,19 +102,25 @@ export function OrderForm({ onOrderComplete }: Props) {
       <div>
         <label className="text-sm font-medium">Order Number</label>
         <input
-          {...register("orderNumber", { required: true })}
+          {...register("orderNumber")}
           className="w-full border px-3 py-2 rounded mt-1"
           placeholder="e.g. ORD-00123"
         />
+        {errors.orderNumber && (
+          <p className="text-red-500 text-sm">{errors.orderNumber.message}</p>
+        )}
       </div>
 
       <div>
         <label className="text-sm font-medium">Item Code</label>
         <input
-          {...register("itemCode", { required: true })}
+          {...register("itemCode")}
           className="w-full border px-3 py-2 rounded mt-1"
           placeholder="e.g. CEM-50GREY"
         />
+        {errors.itemCode && (
+          <p className="text-red-500 text-sm">{errors.itemCode.message}</p>
+        )}
       </div>
 
       {matchedProduct ? (
@@ -145,6 +151,9 @@ export function OrderForm({ onOrderComplete }: Props) {
           className="w-full border px-3 py-2 rounded mt-1 disabled:bg-gray-100"
           placeholder="e.g. 10"
         />
+        {errors.quantity && (
+          <p className="text-red-500 text-sm">{errors.quantity.message}</p>
+        )}
       </div>
 
       {error && <p className="text-red-600 text-sm">{error}</p>}

@@ -7,14 +7,33 @@ type Props = {
 
 export function OrderTable({ highlightId }: Props) {
   const { orders } = useOrders();
-  const sorted = orders.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  const [filters, setFilters] = useState({
+    itemCode: "",
+    orderNumber: "",
+    startDate: "",
+    endDate: "",
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(sorted.length / itemsPerPage);
-  const paginated = sorted.slice(
+
+  const filtered = orders.filter((order) => {
+    const matchesItemCode = order.itemCode
+      .toLowerCase()
+      .includes(filters.itemCode.toLowerCase());
+    const matchesOrderNo = order.orderNumber
+      .toLowerCase()
+      .includes(filters.orderNumber.toLowerCase());
+
+    const orderDate = new Date(order.date).toISOString().split("T")[0];
+    const afterStart = !filters.startDate || orderDate >= filters.startDate;
+    const beforeEnd = !filters.endDate || orderDate <= filters.endDate;
+
+    return matchesItemCode && matchesOrderNo && afterStart && beforeEnd;
+  });
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginated = filtered.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -22,6 +41,38 @@ export function OrderTable({ highlightId }: Props) {
   return (
     <div className="bg-white p-4 rounded shadow overflow-x-auto space-y-4">
       <h3 className="text-lg font-semibold">Recent Orders</h3>
+      <div className="flex flex-wrap gap-4">
+        <input
+          type="text"
+          placeholder="Item Code"
+          value={filters.itemCode}
+          onChange={(e) => setFilters({ ...filters, itemCode: e.target.value })}
+          className="border px-3 py-1 rounded"
+        />
+        <input
+          type="text"
+          placeholder="Order No"
+          value={filters.orderNumber}
+          onChange={(e) =>
+            setFilters({ ...filters, orderNumber: e.target.value })
+          }
+          className="border px-3 py-1 rounded"
+        />
+        <input
+          type="date"
+          value={filters.startDate}
+          onChange={(e) =>
+            setFilters({ ...filters, startDate: e.target.value })
+          }
+          className="border px-3 py-1 rounded"
+        />
+        <input
+          type="date"
+          value={filters.endDate}
+          onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+          className="border px-3 py-1 rounded"
+        />
+      </div>
 
       <table className="min-w-full text-sm">
         <thead className="bg-gray-100 text-left">
