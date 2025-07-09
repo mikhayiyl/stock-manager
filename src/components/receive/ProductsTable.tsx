@@ -1,6 +1,7 @@
 import useProducts from "@/hooks/useProducts";
 import useReceipts from "@/hooks/useReceipts";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 type Props = {
   highlightId: string | null;
@@ -10,14 +11,52 @@ export default function ProductTable({ highlightId }: Props) {
   const { products, isLoading: loadingProducts } = useProducts();
   const { receipts, isLoading: loadingReceipts } = useReceipts();
 
+  const [filters, setFilters] = useState({
+    startDate: "",
+    endDate: "",
+    itemCode: "",
+    name: "",
+  });
+
   const isLoading = loadingProducts || loadingReceipts;
   const hasLoaded = !loadingProducts && !loadingReceipts;
   const isEmpty = hasLoaded && receipts.length === 0;
 
+  const today = new Date().toISOString().slice(0, 10);
+  const skipDateFilter =
+    filters.startDate === today && filters.endDate === today;
+
+  const filteredReceipts = receipts.filter((receipt) => {
+    const product = products.find((p) => p.itemCode === receipt.itemCode);
+    const receiptDate = new Date(receipt.date);
+
+    const matchesStartDate = skipDateFilter
+      ? true
+      : filters.startDate
+      ? receiptDate >= new Date(filters.startDate)
+      : true;
+
+    const matchesEndDate = skipDateFilter
+      ? true
+      : filters.endDate
+      ? receiptDate <= new Date(filters.endDate + "T23:59:59")
+      : true;
+
+    const codeMatch = filters.itemCode
+      ? receipt.itemCode.toLowerCase().includes(filters.itemCode.toLowerCase())
+      : true;
+
+    const nameMatch = filters.name
+      ? product?.name?.toLowerCase().includes(filters.name.toLowerCase())
+      : true;
+
+    return matchesStartDate && matchesEndDate && codeMatch && nameMatch;
+  });
+
   if (isLoading) {
     return (
       <div className="bg-white p-4 rounded shadow overflow-x-auto">
-        <h3 className="text-lg font-semibold mb-4">Recent Receipts</h3>
+        <h3 className="text-lg font-semibold mb-4">Recent Arrivals</h3>
         <table className="min-w-full text-sm">
           <thead className="bg-gray-100 text-left">
             <tr>
@@ -56,7 +95,43 @@ export default function ProductTable({ highlightId }: Props) {
 
   return (
     <div className="bg-white p-4 rounded shadow overflow-x-auto">
-      <h3 className="text-lg font-semibold mb-4">Recent Receipts</h3>
+      <h3 className="text-lg font-semibold mb-4">Recent Arrivals</h3>
+
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap gap-4">
+        <input
+          type="date"
+          value={filters.startDate}
+          onChange={(e) =>
+            setFilters({ ...filters, startDate: e.target.value })
+          }
+          className="border p-2 rounded"
+          placeholder="Start Date"
+        />
+        <input
+          type="date"
+          value={filters.endDate}
+          onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+          className="border p-2 rounded"
+          placeholder="End Date"
+        />
+        <input
+          type="text"
+          value={filters.itemCode}
+          onChange={(e) => setFilters({ ...filters, itemCode: e.target.value })}
+          className="border p-2 rounded"
+          placeholder="Filter by Item Code"
+        />
+        <input
+          type="text"
+          value={filters.name}
+          onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+          className="border p-2 rounded"
+          placeholder="Filter by Name"
+        />
+      </div>
+
+      {/* Table */}
       <table className="min-w-full text-sm">
         <thead className="bg-gray-100 text-left">
           <tr>
@@ -69,7 +144,7 @@ export default function ProductTable({ highlightId }: Props) {
           </tr>
         </thead>
         <tbody>
-          {receipts.map((receipt) => {
+          {filteredReceipts.map((receipt) => {
             const product = products.find(
               (p) => p.itemCode === receipt.itemCode
             );
