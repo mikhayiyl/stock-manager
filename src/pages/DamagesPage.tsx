@@ -1,10 +1,14 @@
 import useDamages from "@/hooks/useDamages";
 import { format } from "date-fns";
 import { useState } from "react";
-import axios from "axios";
+import useProducts from "@/hooks/useProducts";
+import apiClient from "@/services/api-client";
 
 export default function DamagePage() {
   const { damages } = useDamages();
+  const { products } = useProducts();
+
+  console.log(damages);
 
   const [filters, setFilters] = useState({
     itemCode: "",
@@ -13,25 +17,19 @@ export default function DamagePage() {
     endDate: "",
   });
 
-  const handleResolve = async (
-    id: string,
-    status: "replaced" | "resold" | "disposed"
-  ) => {
-    try {
-      await axios.patch(`/api/damages/${id}/resolve`, { status });
-      window.dispatchEvent(new Event("products:refresh")); // optional
-    } catch (err) {
-      console.error("Failed to resolve damage:", err);
-    }
-  };
-
   const filteredDamages = damages.filter((d) => {
+    const matchingProduct = products.find(
+      (p) => p.itemCode.toLowerCase() === d.itemCode.toLowerCase()
+    );
+
     const matchesItemCode = filters.itemCode
       ? d.itemCode.toLowerCase().includes(filters.itemCode.toLowerCase())
       : true;
 
     const matchesName = filters.name
-      ? d.productId?.name?.toLowerCase().includes(filters.name.toLowerCase())
+      ? matchingProduct?.name
+          ?.toLowerCase()
+          .includes(filters.name.toLowerCase())
       : true;
 
     const damageDate = new Date(d.date);
@@ -45,6 +43,18 @@ export default function DamagePage() {
 
     return matchesItemCode && matchesName && matchesStartDate && matchesEndDate;
   });
+
+  const handleResolve = async (
+    id: string,
+    status: "replaced" | "resold" | "disposed"
+  ) => {
+    try {
+      await apiClient.patch(`/damages/resolve/${id}`, { status });
+      window.dispatchEvent(new Event("products:refresh")); // optional
+    } catch (err) {
+      console.error("Failed to resolve damage:", err);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -94,41 +104,47 @@ export default function DamagePage() {
             </tr>
           </thead>
           <tbody>
-            {filteredDamages.map((d) => (
-              <tr key={d._id} className="border-t">
-                <td className="p-2">{d.itemCode}</td>
-                <td className="p-2">{d.productId?.name || "—"}</td>
-                <td className="p-2">{d.quantity}</td>
-                <td className="p-2">
-                  {format(new Date(d.date), "yyyy-MM-dd")}
-                </td>
-                <td className="p-2 capitalize">{d.status}</td>
-                <td className="p-2 space-x-2">
-                  {d.status === "pending" && (
-                    <>
-                      <button
-                        onClick={() => handleResolve(d._id, "replaced")}
-                        className="text-blue-600 hover:underline"
-                      >
-                        Mark Replaced
-                      </button>
-                      <button
-                        onClick={() => handleResolve(d._id, "resold")}
-                        className="text-green-600 hover:underline"
-                      >
-                        Mark Resold
-                      </button>
-                      <button
-                        onClick={() => handleResolve(d._id, "disposed")}
-                        className="text-red-600 hover:underline"
-                      >
-                        Mark Disposed
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {filteredDamages.map((d) => {
+              const matchingProduct = products.find(
+                (p) => p.itemCode === d.itemCode
+              );
+
+              return (
+                <tr key={d._id} className="border-t">
+                  <td className="p-2">{d.itemCode}</td>
+                  <td className="p-2">{matchingProduct?.name ?? "—"}</td>
+                  <td className="p-2">{d.quantity}</td>
+                  <td className="p-2">
+                    {format(new Date(d.date), "yyyy-MM-dd")}
+                  </td>
+                  <td className="p-2 capitalize">{d.status}</td>
+                  <td className="p-2 space-x-2">
+                    {d.status === "pending" && (
+                      <>
+                        <button
+                          onClick={() => handleResolve(d._id, "replaced")}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Mark Replaced
+                        </button>
+                        <button
+                          onClick={() => handleResolve(d._id, "resold")}
+                          className="text-green-600 hover:underline"
+                        >
+                          Mark Resold
+                        </button>
+                        <button
+                          onClick={() => handleResolve(d._id, "disposed")}
+                          className="text-red-600 hover:underline"
+                        >
+                          Mark Disposed
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
