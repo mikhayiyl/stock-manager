@@ -1,3 +1,6 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import damageClient from "@/services/damage-client";
 import type { Product } from "@/types/Product";
 import {
@@ -8,37 +11,58 @@ import {
   DialogTrigger,
 } from "@radix-ui/react-dialog";
 import { useState } from "react";
+import { toast } from "sonner";
+
+const damageSchema = z.object({
+  quantity: z
+    .number({ invalid_type_error: "Quantity is required" })
+    .min(1, "Quantity must be at least 1"),
+  notes: z.string().optional(),
+});
+
+type DamageFormData = z.infer<typeof damageSchema>;
 
 type Props = {
   product: Product;
 };
 
 export function DamageModal({ product }: Props) {
-  const [quantity, setQuantity] = useState(0);
-  const [notes, setNotes] = useState("");
   const [open, setOpen] = useState(false);
 
-  const handleSubmit = async (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => {
-    e.preventDefault();
-    if (!quantity || quantity <= 0) return;
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<DamageFormData>({
+    resolver: zodResolver(damageSchema),
+    defaultValues: { quantity: 0, notes: "" },
+  });
 
+  const onSubmit = async (data: DamageFormData) => {
     try {
       await damageClient.create({
         productId: product._id,
         itemCode: product.itemCode,
-        quantity,
-        notes,
+        quantity: data.quantity,
+        notes: data.notes,
         date: new Date().toISOString(),
       });
 
-      window.dispatchEvent(new Event("products:refresh"));
+      reset();
       setOpen(false);
-      setQuantity(0);
-      setNotes("");
-    } catch (err) {
+      toast.success("Damage reported successfully");
+      window.dispatchEvent(new Event("products:refresh"));
+    } catch (err: any) {
       console.error("Error reporting damage:", err);
+
+      const message =
+        err?.response?.data?.message || // custom message from server
+        err?.response?.data || // fallback to raw response
+        err?.message || // generic JS error message
+        "Something went wrong. Please try again.";
+
+      toast.error(message);
     }
   };
 
@@ -59,22 +83,19 @@ export function DamageModal({ product }: Props) {
           Enter the quantity and optional notes to log damaged stock.
         </DialogDescription>
 
-        <div className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Quantity
             </label>
-
             <input
               type="number"
-              value={quantity || ""}
-              onChange={(e) =>
-                setQuantity(
-                  e.target.value === "" ? 0 : parseInt(e.target.value)
-                )
-              }
+              {...register("quantity", { valueAsNumber: true })}
               className="border px-2 py-1 w-full rounded"
             />
+            {errors.quantity && (
+              <p className="text-sm text-red-600">{errors.quantity.message}</p>
+            )}
           </div>
 
           <div>
@@ -82,19 +103,18 @@ export function DamageModal({ product }: Props) {
               Notes (optional)
             </label>
             <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              {...register("notes")}
               className="border px-2 py-1 w-full rounded"
             />
           </div>
 
           <button
-            onClick={handleSubmit}
+            type="submit"
             className="bg-rose-500 text-white px-4 py-2 rounded hover:bg-rose-600"
           >
             Save
           </button>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

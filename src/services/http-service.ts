@@ -35,6 +35,14 @@ class HttpService {
   create<T>(entity: T) {
     return apiClient.post(this.endpoint, entity);
   }
+
+  getById<T>(id: string) {
+    return apiClient.get<T>(`${this.endpoint}/${id}`);
+  }
+
+  postWithQuery<T>(data: any, params?: Record<string, any>) {
+    return apiClient.post<T>(this.endpoint, data, { params });
+  }
 }
 
 const create = (endpoint: string) => new HttpService(endpoint);
