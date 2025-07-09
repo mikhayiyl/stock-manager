@@ -10,6 +10,7 @@ const baseLinks = [
   { to: "/alert", label: "Product Alert Report" },
   { to: "/salestrend", label: "Sales Trend" },
   { to: "/reports", label: "Reports" },
+  { to: "/damages", label: "Damages" },
 ];
 
 export default function Sidebar() {

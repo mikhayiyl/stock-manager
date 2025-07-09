@@ -26,6 +26,7 @@ function App() {
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/reports" element={<ReportPage />} />
           <Route path="/alert" element={<ProductExceptionsReport />} />
+          <Route path="/damages" element={<DamagePage />} />
           <Route path="/salestrend" element={<SalesTrendReport />} />
 
           <Route
@@ -58,6 +59,7 @@ import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
 import { RegisterPage } from "./pages/RegisterPage";
+import DamagePage from "./pages/DamagesPage";
 
 export function PublicRoute({ children }: { children: ReactNode }) {
   const isLoggedIn = Boolean(localStorage.getItem("x-auth-token"));
