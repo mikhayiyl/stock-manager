@@ -2,10 +2,16 @@ export type Damage = {
   _id: string;
   itemCode: string;
   quantity: number;
-  notes: string;
   date: string;
-  status: "pending" | "replaced" | "resold" | "disposed";
+  notes: string;
+  status: "pending" | "completed";
   productId: {
     name: string;
   };
+  resolutionHistory: {
+    type: "resolved" | "disposed";
+    quantity: number;
+    date: string;
+    notes: string;
+  }[];
 };
