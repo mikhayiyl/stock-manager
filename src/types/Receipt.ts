@@ -4,4 +4,6 @@ export type Receipt = {
   quantity: number;
   date: string;
   isExpress: boolean;
+  client: string;
+  deliveryNote: string;
 };

@@ -1,6 +1,7 @@
 import { LatestArrival } from "@/components/dashboard/LatestArrival";
 import { RecentMovements } from "@/components/dashboard/RecentMovements";
 import { SummaryCards } from "@/components/dashboard/SummaryCard";
+import { LatestExpress } from "@/components/express/Express";
 
 export default function DashboardPage() {
   return (
@@ -9,6 +10,7 @@ export default function DashboardPage() {
       <SummaryCards />
       <RecentMovements />
       <LatestArrival />
+      <LatestExpress />
     </div>
   );
 }

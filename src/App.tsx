@@ -27,6 +27,7 @@ function App() {
           <Route path="/reports" element={<ReportPage />} />
           <Route path="/alert" element={<ProductExceptionsReport />} />
           <Route path="/damages" element={<DamagePage />} />
+          <Route path="/express" element={<ExpressPage />} />
           <Route path="/salestrend" element={<SalesTrendReport />} />
 
           <Route
@@ -60,6 +61,7 @@ import type { ReactNode } from "react";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
 import { RegisterPage } from "./pages/RegisterPage";
 import DamagePage from "./pages/DamagesPage";
+import ExpressPage from "./pages/ExpressPage";
 
 export function PublicRoute({ children }: { children: ReactNode }) {
   const isLoggedIn = Boolean(localStorage.getItem("x-auth-token"));
