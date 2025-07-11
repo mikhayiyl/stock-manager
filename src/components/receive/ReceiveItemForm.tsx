@@ -11,6 +11,9 @@ type FormData = {
   name: string;
   unit: string;
   quantity: number;
+  isExpress: boolean;
+  client: string;
+  deliveryNote: string;
 };
 
 type Props = {
@@ -18,9 +21,17 @@ type Props = {
 };
 
 export function ReceiveItemForm({ onStockUpdate }: Props) {
-  const { register, handleSubmit, watch, reset } = useForm<FormData>();
+  const { register, handleSubmit, watch, reset } = useForm<FormData>({
+    defaultValues: {
+      isExpress: false,
+      client: "",
+      deliveryNote: "",
+    },
+  });
+
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
   const itemCode = watch("itemCode");
+  const isExpress = watch("isExpress");
 
   useEffect(() => {
     if (itemCode?.trim()) {
@@ -42,47 +53,41 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
 
   const onSubmit = async (data: FormData) => {
     const token = localStorage.getItem("x-auth-token");
-    if (!token) return toast.error("access denied");
+    if (!token) return toast.error("Access denied");
 
     if (!data.quantity || data.quantity < 1) return;
 
-    let updatedId: string;
+    try {
+      const today = new Date().toISOString();
 
-    if (matchedProduct) {
-      await productClient.patch<Product>(matchedProduct._id, {
-        numberInStock:
-          Number(matchedProduct.numberInStock) + Number(data.quantity),
-        received: new Date().toISOString().split("T")[0],
-      });
-      updatedId = matchedProduct._id;
-    } else {
-      const newProduct = await productClient.create<Omit<Product, "_id">>({
+      const payload = {
         itemCode: data.itemCode,
-        name: data.name,
-        unit: data.unit,
-        numberInStock: data.quantity,
-        damaged: 0,
-        received: new Date().toISOString().split("T")[0],
-      });
-      updatedId = newProduct.data._id;
+        quantity: data.quantity,
+        date: today,
+        isExpress: data.isExpress,
+        client: data.isExpress ? data.client : null,
+        deliveryNote: data.isExpress ? data.deliveryNote : null,
+        name: matchedProduct?.name ?? data.name,
+        unit: matchedProduct?.unit ?? data.unit,
+      };
+
+      const receipt = await receiptClient.create(payload);
+
+      toast.success("Receipt logged successfully");
+      reset();
+      setMatchedProduct(null);
+
+      window.dispatchEvent(new Event("receipts:refresh"));
+      if (!data.isExpress) window.dispatchEvent(new Event("products:refresh"));
+
+      // If backend sends updatedId, pass it on
+      if (receipt?.data?._id) {
+        onStockUpdate(receipt.data._id);
+      }
+    } catch (err) {
+      console.error("Receipt failed:", err);
+      toast.error("Failed to log receipt");
     }
-
-    toast.success("Stock received successfully");
-    reset();
-    setMatchedProduct(null);
-
-    // hook handle the refresh
-    window.dispatchEvent(new Event("receipts:refresh"));
-    window.dispatchEvent(new Event("products:refresh"));
-
-    // notify parent for highlight
-    onStockUpdate(updatedId);
-
-    await receiptClient.create({
-      itemCode: data.itemCode,
-      quantity: data.quantity,
-      date: new Date().toISOString(),
-    });
   };
 
   return (
@@ -143,6 +148,38 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
           placeholder="e.g. 100"
         />
       </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          {...register("isExpress")}
+          className="accent-blue-600"
+        />
+        <label className="text-sm font-medium">
+          Express Delivery (skip stock)
+        </label>
+      </div>
+
+      {isExpress && (
+        <>
+          <div>
+            <label className="text-sm font-medium">Client Name</label>
+            <input
+              {...register("client", { required: true })}
+              className="w-full border px-3 py-2 rounded mt-1"
+              placeholder="e.g. Ali & Sons Paints"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Delivery Note</label>
+            <input
+              {...register("deliveryNote", { required: false })}
+              className="w-full border px-3 py-2 rounded mt-1"
+              placeholder="e.g. DN-0423"
+            />
+          </div>
+        </>
+      )}
 
       <button
         type="submit"

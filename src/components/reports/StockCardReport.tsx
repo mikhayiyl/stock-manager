@@ -37,15 +37,13 @@ export function StockCardReport({ filter }: Props) {
     filter.to.trim() !== "" ||
     filter.search.trim() !== "";
 
-  const getEntriesToExport = () => {
-    return isFilterActive()
+  const getEntriesToExport = () =>
+    isFilterActive()
       ? filteredEntries
-      : Array.from(grouped.entries()).slice(0, 20); // fallback to latest 20
-  };
+      : Array.from(grouped.entries()).slice(0, 20);
 
   const handleExportCSV = () => {
     const entriesToExport = getEntriesToExport();
-
     const rows: string[] = ["Item Code,Item Name,Type,Quantity,Date"];
 
     entriesToExport.forEach(([itemCode, entry]) => {
@@ -54,9 +52,9 @@ export function StockCardReport({ filter }: Props) {
 
       entry.receipts.forEach((r) => {
         rows.push(
-          `${itemCode},${name},Received,${r.quantity},${new Date(
-            r.date
-          ).toLocaleDateString()}`
+          `${itemCode},${name},${
+            r.isExpress ? "Received (Express)" : "Received"
+          },${r.quantity},${new Date(r.date).toLocaleDateString()}`
         );
       });
 
@@ -68,7 +66,6 @@ export function StockCardReport({ filter }: Props) {
         );
       });
 
-      //  blank line to separate items
       rows.push("");
     });
 
@@ -105,7 +102,7 @@ export function StockCardReport({ filter }: Props) {
 
       entry.receipts.forEach((r) => {
         rows.push([
-          "Received",
+          r.isExpress ? "Received (Express)" : "Received",
           r.quantity,
           new Date(r.date).toLocaleDateString(),
         ]);
@@ -254,23 +251,19 @@ export function StockCardReport({ filter }: Props) {
         <p className="text-center text-gray-500">
           Showing latest receipts. Apply filters to refine.
         </p>
-      ) : loading ? (
-        <p className="text-center text-gray-500">Loading report...</p>
       ) : paginatedEntries.length === 0 ? (
         <p className="text-center text-gray-500">No entries found.</p>
       ) : (
-        <div>
-          <div>
-            {paginatedEntries.map(([itemCode, { receipts, orders }]) => (
-              <StockCard
-                key={itemCode}
-                itemCode={itemCode}
-                receipts={receipts}
-                orders={orders}
-                product={products.find((p) => p.itemCode === itemCode)}
-              />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {paginatedEntries.map(([itemCode, { receipts, orders }]) => (
+            <StockCard
+              key={itemCode}
+              itemCode={itemCode}
+              receipts={receipts}
+              orders={orders}
+              product={products.find((p) => p.itemCode === itemCode)}
+            />
+          ))}
         </div>
       )}
 

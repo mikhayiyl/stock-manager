@@ -7,6 +7,7 @@ export type Entry = {
   itemCode: string;
   quantity: number;
   date: string;
+  isExpress?: boolean;
   type?: EntryType; // optional if not always used
 };
 
@@ -34,9 +35,18 @@ export function StockCard({ itemCode, receipts, orders, product }: Props) {
           <p className="text-sm font-semibold text-gray-600 mb-1">Receipts</p>
           <ul className="text-sm space-y-1">
             {receipts.map((r) => (
-              <li key={r._id}>
-                +{r.quantity} on {new Date(r.date).toLocaleDateString()}
-              </li>
+              <div key={r._id} className="text-sm flex items-center gap-2">
+                <span>
+                  {r.quantity} received on{" "}
+                  {new Date(r.date).toLocaleDateString()}
+                </span>
+
+                {r.isExpress && (
+                  <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-xs font-medium">
+                    EXPRESS
+                  </span>
+                )}
+              </div>
             ))}
           </ul>
           <p className="mt-2 font-medium text-blue-700">
@@ -44,19 +54,22 @@ export function StockCard({ itemCode, receipts, orders, product }: Props) {
           </p>
         </div>
 
-        <div>
-          <p className="text-sm font-semibold text-gray-600 mb-1">Orders</p>
-          <ul className="text-sm space-y-1">
-            {orders.map((o) => (
-              <li key={o._id}>
-                –{o.quantity} on {new Date(o.date).toLocaleDateString()}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 font-medium text-red-700">
-            Total Ordered: {totalOrdered}
-          </p>
-        </div>
+        {totalOrdered > 0 && (
+          <div>
+            <p className="text-sm font-semibold text-gray-600 mb-1">Orders</p>
+            <ul className="text-sm space-y-1">
+              {orders.map((o) => (
+                <li key={o._id}>
+                  –{o.quantity} on {new Date(o.date).toLocaleDateString()}
+                </li>
+              ))}
+            </ul>
+
+            <p className="mt-2 font-medium text-red-700">
+              Total Ordered: {totalOrdered}
+            </p>
+          </div>
+        )}
       </div>
 
       <p className="mt-4 font-semibold text-green-700">
