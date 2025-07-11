@@ -3,4 +3,5 @@ export type Receipt = {
   itemCode: string;
   quantity: number;
   date: string;
+  isExpress: boolean;
 };

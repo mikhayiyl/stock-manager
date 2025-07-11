@@ -7,6 +7,8 @@ type Props = {
   highlightId: string | null;
 };
 
+const itemsPerPage = 10;
+
 export default function ProductTable({ highlightId }: Props) {
   const { products, isLoading: loadingProducts } = useProducts();
   const { receipts, isLoading: loadingReceipts } = useReceipts();
@@ -18,6 +20,8 @@ export default function ProductTable({ highlightId }: Props) {
     name: "",
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+
   const isLoading = loadingProducts || loadingReceipts;
   const hasLoaded = !loadingProducts && !loadingReceipts;
   const isEmpty = hasLoaded && receipts.length === 0;
@@ -26,61 +30,49 @@ export default function ProductTable({ highlightId }: Props) {
   const skipDateFilter =
     filters.startDate === today && filters.endDate === today;
 
-  const filteredReceipts = receipts.filter((receipt) => {
-    const product = products.find((p) => p.itemCode === receipt.itemCode);
-    const receiptDate = new Date(receipt.date);
+  const filteredReceipts = receipts
+    .filter((receipt) => !receipt.isExpress)
+    .filter((receipt) => {
+      const product = products.find((p) => p.itemCode === receipt.itemCode);
+      const receiptDate = new Date(receipt.date);
 
-    const matchesStartDate = skipDateFilter
-      ? true
-      : filters.startDate
-      ? receiptDate >= new Date(filters.startDate)
-      : true;
+      const matchesStartDate = skipDateFilter
+        ? true
+        : filters.startDate
+        ? receiptDate >= new Date(filters.startDate)
+        : true;
 
-    const matchesEndDate = skipDateFilter
-      ? true
-      : filters.endDate
-      ? receiptDate <= new Date(filters.endDate + "T23:59:59")
-      : true;
+      const matchesEndDate = skipDateFilter
+        ? true
+        : filters.endDate
+        ? receiptDate <= new Date(filters.endDate + "T23:59:59")
+        : true;
 
-    const codeMatch = filters.itemCode
-      ? receipt.itemCode.toLowerCase().includes(filters.itemCode.toLowerCase())
-      : true;
+      const codeMatch = filters.itemCode
+        ? receipt.itemCode
+            .toLowerCase()
+            .includes(filters.itemCode.toLowerCase())
+        : true;
 
-    const nameMatch = filters.name
-      ? product?.name?.toLowerCase().includes(filters.name.toLowerCase())
-      : true;
+      const nameMatch = filters.name
+        ? product?.name?.toLowerCase().includes(filters.name.toLowerCase())
+        : true;
 
-    return matchesStartDate && matchesEndDate && codeMatch && nameMatch;
-  });
+      return matchesStartDate && matchesEndDate && codeMatch && nameMatch;
+    });
+
+  const paginatedReceipts = filteredReceipts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredReceipts.length / itemsPerPage);
 
   if (isLoading) {
     return (
       <div className="bg-white p-4 rounded shadow overflow-x-auto">
         <h3 className="text-lg font-semibold mb-4">Recent Arrivals</h3>
-        <table className="min-w-full text-sm">
-          <thead className="bg-gray-100 text-left">
-            <tr>
-              {["Item Code", "Name", "Quantity", "Stock", "Unit", "Date"].map(
-                (header) => (
-                  <th key={header} className="p-2">
-                    {header}
-                  </th>
-                )
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 6 }).map((_, rowIndex) => (
-              <tr key={rowIndex} className="border-b">
-                {Array.from({ length: 6 }).map((_, colIndex) => (
-                  <td key={colIndex} className="p-2">
-                    <div className="h-4 w-full bg-gray-200 rounded" />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <p className="text-gray-500 text-sm">Loading receipts...</p>
       </div>
     );
   }
@@ -106,28 +98,26 @@ export default function ProductTable({ highlightId }: Props) {
             setFilters({ ...filters, startDate: e.target.value })
           }
           className="border p-2 rounded"
-          placeholder="Start Date"
         />
         <input
           type="date"
           value={filters.endDate}
           onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
           className="border p-2 rounded"
-          placeholder="End Date"
         />
         <input
           type="text"
           value={filters.itemCode}
           onChange={(e) => setFilters({ ...filters, itemCode: e.target.value })}
           className="border p-2 rounded"
-          placeholder="Filter by Item Code"
+          placeholder="Item Code"
         />
         <input
           type="text"
           value={filters.name}
           onChange={(e) => setFilters({ ...filters, name: e.target.value })}
           className="border p-2 rounded"
-          placeholder="Filter by Name"
+          placeholder="Name"
         />
       </div>
 
@@ -144,7 +134,7 @@ export default function ProductTable({ highlightId }: Props) {
           </tr>
         </thead>
         <tbody>
-          {filteredReceipts.map((receipt) => {
+          {paginatedReceipts.map((receipt) => {
             const product = products.find(
               (p) => p.itemCode === receipt.itemCode
             );
@@ -175,6 +165,25 @@ export default function ProductTable({ highlightId }: Props) {
           })}
         </tbody>
       </table>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex justify-center gap-2 text-sm">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === i + 1
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 hover:bg-gray-200"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
