@@ -1,6 +1,3 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import damageClient from "@/services/damage-client";
 import type { Product } from "@/types/Product";
 import {
@@ -11,23 +8,24 @@ import {
   DialogTrigger,
 } from "@radix-ui/react-dialog";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-
-const damageSchema = z.object({
-  quantity: z
-    .number({ invalid_type_error: "Quantity is required" })
-    .min(1, "Quantity must be at least 1"),
-  notes: z.string().optional(),
-});
-
-type DamageFormData = z.infer<typeof damageSchema>;
+import { z } from "zod";
 
 type Props = {
   product: Product;
 };
-
 export function DamageModal({ product }: Props) {
   const [open, setOpen] = useState(false);
+
+  const damageSchema = z.object({
+    quantity: z
+      .number({ invalid_type_error: "Quantity is required" })
+      .min(1, "Quantity must be at least 1"),
+    notes: z.string().optional(),
+  });
+
+  type DamageFormData = z.infer<typeof damageSchema>;
 
   const {
     register,
@@ -35,8 +33,8 @@ export function DamageModal({ product }: Props) {
     reset,
     formState: { errors },
   } = useForm<DamageFormData>({
-    resolver: zodResolver(damageSchema),
     defaultValues: { quantity: 0, notes: "" },
+    mode: "onChange", //  Ensures validation fires while typing
   });
 
   const onSubmit = async (data: DamageFormData) => {
@@ -88,11 +86,27 @@ export function DamageModal({ product }: Props) {
             <label className="block text-sm font-medium text-gray-700">
               Quantity
             </label>
+
             <input
               type="number"
-              {...register("quantity", { valueAsNumber: true })}
+              min={1}
+              max={product.numberInStock}
+              {...register("quantity", {
+                valueAsNumber: true,
+                required: "Quantity is required",
+                validate: (value) =>
+                  value >= 1
+                    ? value <= product.numberInStock ||
+                      `Cannot exceed available stock of ${product.numberInStock}`
+                    : "Quantity must be at least 1",
+              })}
               className="border px-2 py-1 w-full rounded"
             />
+
+            <small className="text-sm text-gray-500">
+              Available stock: {product.numberInStock}
+            </small>
+
             {errors.quantity && (
               <p className="text-sm text-red-600">{errors.quantity.message}</p>
             )}
