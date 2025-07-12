@@ -3,7 +3,7 @@ import useReceipts from "@/hooks/useReceipts";
 import { Link } from "react-router-dom";
 
 export function LatestExpress() {
-  const { receipts } = useReceipts();
+  const { receipts, isLoading } = useReceipts();
   const [latestExpress, setLatestExpress] = useState<
     null | (typeof receipts)[0]
   >(null);
@@ -15,6 +15,19 @@ export function LatestExpress() {
 
     setLatestExpress(expressOnly[0] ?? null);
   }, [receipts]);
+
+  if (isLoading) {
+    return (
+      <div className="p-4 bg-white rounded shadow space-y-3 animate-pulse">
+        <div className="h-6 w-2/3 bg-purple-100 rounded" />
+        <div className="h-4 w-1/2 bg-purple-100 rounded" />
+        <div className="h-4 w-1/3 bg-purple-100 rounded" />
+        <div className="h-4 w-2/3 bg-purple-100 rounded" />
+        <div className="h-4 w-1/4 bg-purple-100 rounded" />
+        <div className="h-4 w-1/3 bg-purple-100 rounded" />
+      </div>
+    );
+  }
 
   if (!latestExpress) {
     return (
@@ -42,7 +55,12 @@ export function LatestExpress() {
         <strong>Delivery Note:</strong> {latestExpress.deliveryNote ?? "—"}
       </p>
       <p>
-        <strong>Date:</strong> {new Date(latestExpress.date).toLocaleString()}
+        <strong>Date:</strong>{" "}
+        {new Date(latestExpress.date).toLocaleString("en-GB", {
+          dateStyle: "medium",
+          timeStyle: "short",
+          hour12: true,
+        })}
       </p>
 
       <Link
