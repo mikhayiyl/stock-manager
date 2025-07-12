@@ -5,15 +5,20 @@ import { CanceledError } from "@/services/api-client";
 
 const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchOrders = () => {
+    setIsLoading(true);
     const { request, cancel } = orderClient.getAll<Order>();
+
     request
       .then((res) => setOrders(res.data))
       .catch((err) => {
         if (err instanceof CanceledError) return;
-        console.error("Order fetch error:", err.mesage);
-      });
+        console.error("Order fetch error:", err.message);
+      })
+      .finally(() => setIsLoading(false));
+
     return cancel;
   };
 
@@ -29,7 +34,7 @@ const useOrders = () => {
     };
   }, []);
 
-  return { orders };
+  return { orders, isLoading };
 };
 
 export default useOrders;

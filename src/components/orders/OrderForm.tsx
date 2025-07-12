@@ -1,4 +1,3 @@
-import { zodResolver } from "@hookform/resolvers/zod";
 import orderClient from "@/services/order-client";
 import productClient from "@/services/product-client";
 import type { Product } from "@/types/Product";
@@ -13,7 +12,7 @@ const orderSchema = z.object({
   orderNumber: z.string().min(6, "Order number must be atleast 6 characters"),
   itemCode: z.string().min(5, "Item code must be atleast 5 digits"),
   quantity: z
-    .number({ invalid_type_error: "Quantity must be a number" })
+    .number({ invalid_type_error: "Quantity cannot be empty" })
     .min(1, "Quantity must be at least 1"),
 });
 
@@ -28,11 +27,11 @@ export function OrderForm({ onOrderComplete }: Props) {
     register,
     handleSubmit,
     watch,
-    reset,
     setFocus,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(orderSchema),
+    mode: "onChange",
   });
 
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
@@ -142,17 +141,26 @@ export function OrderForm({ onOrderComplete }: Props) {
 
         <input
           type="number"
-          {...register("quantity", {
-            required: true,
-            min: 1,
-            valueAsNumber: true,
-          })}
+          min={1}
+          max={matchedProduct?.numberInStock}
           disabled={matchedProduct?.numberInStock === 0}
+          {...register("quantity", {
+            valueAsNumber: true,
+            required: "Quantity is required",
+            validate: (value) =>
+              !matchedProduct ||
+              value <= matchedProduct.numberInStock ||
+              `Cannot exceed available stock of ${matchedProduct.numberInStock}`,
+          })}
           className="w-full border px-3 py-2 rounded mt-1 disabled:bg-gray-100"
-          placeholder="e.g. 10"
         />
-        {errors.quantity && (
+
+        {errors.quantity ? (
           <p className="text-red-500 text-sm">{errors.quantity.message}</p>
+        ) : (
+          matchedProduct && (
+            <p className="text-sm text-green-600">✅ Within available stock</p>
+          )
         )}
       </div>
 
