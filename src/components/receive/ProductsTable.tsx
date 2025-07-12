@@ -97,26 +97,26 @@ export default function ProductTable({ highlightId }: Props) {
           onChange={(e) =>
             setFilters({ ...filters, startDate: e.target.value })
           }
-          className="border p-2 rounded"
+          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
         />
         <input
           type="date"
           value={filters.endDate}
           onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-          className="border p-2 rounded"
+          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
         />
         <input
           type="text"
           value={filters.itemCode}
           onChange={(e) => setFilters({ ...filters, itemCode: e.target.value })}
-          className="border p-2 rounded"
+          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
           placeholder="Item Code"
         />
         <input
           type="text"
           value={filters.name}
           onChange={(e) => setFilters({ ...filters, name: e.target.value })}
-          className="border p-2 rounded"
+          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
           placeholder="Name"
         />
       </div>

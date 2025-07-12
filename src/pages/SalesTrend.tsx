@@ -119,7 +119,7 @@ export function SalesTrendReport() {
             setCurrentPage(1);
             setDateRange((prev) => ({ ...prev, from: e.target.value }));
           }}
-          className="border px-2 py-1 rounded"
+          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
         />
         <span>to</span>
         <input
@@ -129,7 +129,7 @@ export function SalesTrendReport() {
             setCurrentPage(1);
             setDateRange((prev) => ({ ...prev, to: e.target.value }));
           }}
-          className="border px-2 py-1 rounded"
+          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
         />
       </div>
 

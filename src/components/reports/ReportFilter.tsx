@@ -30,7 +30,7 @@ export function ReportFilter({ onFilterChange }: Props) {
           type="date"
           value={from}
           onChange={(e) => handleChange("from", e.target.value)}
-          className="border px-3 py-2 rounded"
+          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
         />
       </div>
       <div>
@@ -39,7 +39,7 @@ export function ReportFilter({ onFilterChange }: Props) {
           type="date"
           value={to}
           onChange={(e) => handleChange("to", e.target.value)}
-          className="border px-3 py-2 rounded"
+          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
         />
       </div>
       <div>
@@ -49,7 +49,7 @@ export function ReportFilter({ onFilterChange }: Props) {
           value={search}
           onChange={(e) => handleChange("search", e.target.value)}
           placeholder="Item code or name"
-          className="border px-3 py-2 rounded"
+          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
         />
       </div>
     </div>
