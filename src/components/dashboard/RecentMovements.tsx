@@ -1,5 +1,7 @@
 import useProducts from "@/hooks/useProducts";
+import { EmptyState } from "@/components/EmptyState";
 import { Link } from "react-router-dom";
+import { SkeletonBlock } from "../SkeletonBlock";
 
 export function RecentMovements() {
   const { products, isLoading } = useProducts();
@@ -11,22 +13,11 @@ export function RecentMovements() {
     .slice(0, 5);
 
   if (isLoading) {
-    return (
-      <div className="bg-white p-4 rounded shadow animate-pulse space-y-4">
-        <div className="h-6 w-1/3 bg-gray-200 rounded" />
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="grid grid-cols-5 gap-4">
-              <div className="h-4 bg-gray-200 rounded" />
-              <div className="h-4 bg-gray-200 rounded" />
-              <div className="h-4 bg-gray-200 rounded" />
-              <div className="h-4 bg-gray-200 rounded" />
-              <div className="h-4 bg-gray-200 rounded" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <SkeletonBlock variant="table" />;
+  }
+
+  if (products.length === 0) {
+    return <EmptyState message="No products data yet." />;
   }
 
   return (

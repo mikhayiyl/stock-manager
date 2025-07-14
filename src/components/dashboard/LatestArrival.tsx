@@ -1,5 +1,7 @@
 import useProducts from "@/hooks/useProducts";
+import { EmptyState } from "@/components/EmptyState";
 import { Link } from "react-router-dom";
+import { SkeletonBlock } from "../SkeletonBlock";
 
 export function LatestArrival() {
   const { products, isLoading } = useProducts();
@@ -12,23 +14,11 @@ export function LatestArrival() {
       )[0] ?? null;
 
   if (isLoading) {
-    return (
-      <div className="bg-white p-4 rounded shadow animate-pulse space-y-3">
-        <div className="h-6 w-1/3 bg-gray-200 rounded" />
-        <div className="h-4 w-2/3 bg-gray-200 rounded" />
-        <div className="h-4 w-1/2 bg-gray-200 rounded" />
-        <div className="h-4 w-2/3 bg-gray-200 rounded" />
-        <div className="h-4 w-1/3 bg-gray-200 rounded" />
-      </div>
-    );
+    return <SkeletonBlock variant="card" />;
   }
 
   if (!latest?.itemCode) {
-    return (
-      <div className="bg-white p-4 rounded shadow">
-        <p className="text-gray-500 text-sm">No arrival data yet.</p>
-      </div>
-    );
+    return <EmptyState message="No arrival data yet." />;
   }
 
   return (

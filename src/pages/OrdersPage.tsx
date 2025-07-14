@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { OrderForm } from "@/components/orders/OrderForm";
-import { OrderTable } from "@/components/orders/OrderTable";
 import getAuthUser from "@/lib/auth";
+import { Orders } from "@/components/orders/Orders";
 
 export default function OrdersPage() {
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
@@ -15,7 +15,7 @@ export default function OrdersPage() {
           <OrderForm onOrderComplete={(id) => setLastOrderId(id)} />
         </>
       )}
-      <OrderTable highlightId={lastOrderId} />
+      <Orders highlightId={lastOrderId} />
     </div>
   );
 }

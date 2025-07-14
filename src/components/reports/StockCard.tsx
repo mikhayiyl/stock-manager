@@ -1,15 +1,5 @@
+import type { Entry } from "@/types/Entry";
 import type { Product } from "@/types/Product";
-
-type EntryType = "received" | "order" | "damage";
-
-export type Entry = {
-  _id: string;
-  itemCode: string;
-  quantity: number;
-  date: string;
-  isExpress?: boolean;
-  type?: EntryType; // optional if not always used
-};
 
 type Props = {
   itemCode: string;

@@ -1,7 +1,7 @@
 import { LatestArrival } from "@/components/dashboard/LatestArrival";
 import { RecentMovements } from "@/components/dashboard/RecentMovements";
 import { SummaryCards } from "@/components/dashboard/SummaryCard";
-import { LatestExpress } from "@/components/express/Express";
+import { LatestExpress } from "@/components/dashboard/Express";
 
 export default function DashboardPage() {
   return (

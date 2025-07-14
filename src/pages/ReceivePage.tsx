@@ -1,5 +1,5 @@
-import ProductTable from "@/components/receive/ProductsTable";
 import { ReceiveItemForm } from "@/components/receive/ReceiveItemForm";
+import { ReceiveData } from "@/components/receive/ReceiveData";
 import getAuthUser from "@/lib/auth";
 import { useState } from "react";
 
@@ -20,7 +20,7 @@ export default function ReceivePage() {
           />
         </>
       )}
-      <ProductTable highlightId={highlightId} />
+      <ReceiveData highlightId={highlightId} />
     </div>
   );
 }

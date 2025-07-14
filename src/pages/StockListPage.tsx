@@ -14,13 +14,15 @@ export default function StockListPage() {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Stock List</h2>
 
-      <SearchBar
-        value={search}
-        onChange={(val) => {
-          setSearch(val);
-          setCurrentPage(1);
-        }}
-      />
+      {products.length > 0 && (
+        <SearchBar
+          value={search}
+          onChange={(val) => {
+            setSearch(val);
+            setCurrentPage(1);
+          }}
+        />
+      )}
 
       <StockTable
         products={products}

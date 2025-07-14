@@ -6,7 +6,7 @@ import OrdersPage from "./pages/OrdersPage";
 import ReceivePage from "./pages/ReceivePage";
 import ReportPage from "./pages/ReportPage";
 import StockListPage from "./pages/StockListPage";
-import { ProductExceptionsReport } from "./pages/ProductsAlert";
+import { ProductExceptionsReport } from "./pages/ExceptionPage";
 import { SalesTrendReport } from "./pages/SalesTrend";
 import { ProductPage } from "./pages/ProductPage";
 import { LogoutPage } from "./pages/Logout";

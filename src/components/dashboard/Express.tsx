@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import useReceipts from "@/hooks/useReceipts";
 import { Link } from "react-router-dom";
+import { EmptyState } from "@/components/EmptyState";
+import { SkeletonBlock } from "../SkeletonBlock";
 
 export function LatestExpress() {
   const { receipts, isLoading } = useReceipts();
@@ -17,24 +19,11 @@ export function LatestExpress() {
   }, [receipts]);
 
   if (isLoading) {
-    return (
-      <div className="p-4 bg-white rounded shadow space-y-3 animate-pulse">
-        <div className="h-6 w-2/3 bg-purple-100 rounded" />
-        <div className="h-4 w-1/2 bg-purple-100 rounded" />
-        <div className="h-4 w-1/3 bg-purple-100 rounded" />
-        <div className="h-4 w-2/3 bg-purple-100 rounded" />
-        <div className="h-4 w-1/4 bg-purple-100 rounded" />
-        <div className="h-4 w-1/3 bg-purple-100 rounded" />
-      </div>
-    );
+    return <SkeletonBlock variant="card" />;
   }
 
   if (!latestExpress) {
-    return (
-      <div className="p-4 bg-white rounded shadow text-sm text-gray-500">
-        No express deliveries yet.
-      </div>
-    );
+    return <EmptyState message="No express deliveries yet." />;
   }
 
   return (

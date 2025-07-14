@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { DamageModal } from "@/components/stock/DamageModal";
 import getAuthUser from "@/lib/auth";
+import { EmptyState } from "@/components/EmptyState";
+import { SkeletonBlock } from "../SkeletonBlock";
+import { useDebounce } from "@/hooks/useDebounce";
 
 type Product = {
   _id: string;
@@ -27,8 +30,12 @@ export default function StockTable({
   currentPage,
   itemsPerPage,
 }: Props) {
+  const debouncedSearch = useDebounce(search, 400);
+
   const filtered = products.filter((p) =>
-    `${p.itemCode} ${p.name}`.toLowerCase().includes(search.toLowerCase())
+    `${p.itemCode} ${p.name}`
+      .toLowerCase()
+      .includes(debouncedSearch.toLowerCase())
   );
 
   const paginated = filtered.slice(
@@ -39,29 +46,11 @@ export default function StockTable({
   const isAdmin = getAuthUser()?.isAdmin;
 
   if (isLoading) {
-    return (
-      <div className="bg-white rounded shadow p-4 space-y-2 animate-pulse">
-        <div className="h-6 w-1/3 bg-gray-200 rounded" />
-        {Array.from({ length: itemsPerPage }).map((_, i) => (
-          <div key={i} className="grid grid-cols-6 gap-4">
-            <div className="h-4 bg-gray-200 rounded" />
-            <div className="h-4 bg-gray-200 rounded" />
-            <div className="h-4 bg-gray-200 rounded" />
-            <div className="h-4 bg-gray-200 rounded" />
-            <div className="h-4 bg-gray-200 rounded" />
-            <div className="h-4 bg-gray-200 rounded" />
-          </div>
-        ))}
-      </div>
-    );
+    return <SkeletonBlock rows={10} columns={7} variant="card" />;
   }
 
   if (filtered.length === 0) {
-    return (
-      <div className="bg-white rounded shadow p-4 text-sm text-center text-gray-500">
-        No products found.
-      </div>
-    );
+    return <EmptyState message="No products found." />;
   }
 
   return (
