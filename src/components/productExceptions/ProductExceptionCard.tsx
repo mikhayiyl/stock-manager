@@ -1,5 +1,5 @@
+import type { Entry } from "@/types/Entry";
 import type { Product } from "@/types/Product";
-import type { Entry } from "@/components/reports/StockCard";
 
 type Props = {
   product: Product;

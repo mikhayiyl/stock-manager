@@ -5,10 +5,11 @@ import useProducts from "@/hooks/useProducts";
 import useOrders from "@/hooks/useOrders";
 import useReceipts from "@/hooks/useReceipts";
 import { ReportActions } from "./ReportActions";
-import { StockCard, type Entry } from "./StockCard";
+import { StockCard } from "./StockCard";
 import { Pagination } from "./Pagination";
 import pdfMake from "pdfmake/build/pdfmake";
 import * as pdfFonts from "pdfmake/build/vfs_fonts";
+import type { Entry } from "@/types/Entry";
 
 pdfMake.vfs = pdfFonts.vfs;
 
