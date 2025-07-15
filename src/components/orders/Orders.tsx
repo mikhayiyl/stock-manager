@@ -1,9 +1,10 @@
 import useOrders from "@/hooks/useOrders";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { OrderFilters } from "./OrderFilters";
 import { OrdersTable } from "./OrdersTable";
-import { PaginationControls } from "./PaginationControls";
+
 import { useDebounce } from "@/hooks/useDebounce";
+import Pagination from "../PaginationBar";
 
 type Props = {
   highlightId: string | null;
@@ -50,7 +51,6 @@ export function Orders({ highlightId }: Props) {
     return matchesItemCode && matchesOrderNumber && afterStart && beforeEnd;
   });
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginated = filtered.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -69,10 +69,11 @@ export function Orders({ highlightId }: Props) {
         highlightId={highlightId}
       />
 
-      <PaginationControls
+      <Pagination
+        totalItems={filtered.length}
         currentPage={currentPage}
-        totalPages={totalPages}
-        setCurrentPage={setCurrentPage}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
       />
     </>
   );

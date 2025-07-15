@@ -1,4 +1,4 @@
-import Pagination from "@/components/stock/Pagination";
+import Pagination from "@/components/PaginationBar";
 import SearchBar from "@/components/stock/SearchBar";
 import StockTable from "@/components/stock/StockTable";
 import useProducts from "@/hooks/useProducts";

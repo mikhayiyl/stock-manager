@@ -2,15 +2,14 @@ import { Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Layout } from "./components/layout/Layout";
 import DashboardPage from "./pages/Dashboard";
+import { LoginPage } from "./pages/Login";
+import { LogoutPage } from "./pages/Logout";
 import OrdersPage from "./pages/OrdersPage";
+import { ProductPage } from "./pages/ProductPage";
 import ReceivePage from "./pages/ReceivePage";
 import ReportPage from "./pages/ReportPage";
-import StockListPage from "./pages/StockListPage";
-import { ProductExceptionsReport } from "./pages/ExceptionPage";
 import { SalesTrendReport } from "./pages/SalesTrend";
-import { ProductPage } from "./pages/ProductPage";
-import { LogoutPage } from "./pages/Logout";
-import { LoginPage } from "./pages/Login";
+import StockListPage from "./pages/StockListPage";
 
 function App() {
   //dynamic page title
@@ -25,10 +24,10 @@ function App() {
           <Route path="/receive" element={<ReceivePage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/reports" element={<ReportPage />} />
-          <Route path="/alert" element={<ProductExceptionsReport />} />
           <Route path="/damages" element={<DamagePage />} />
           <Route path="/express" element={<ExpressPage />} />
           <Route path="/salestrend" element={<SalesTrendReport />} />
+          <Route path="/stock-scope" element={<StockHealthDashboard />} />
 
           <Route
             path="/login"
@@ -56,12 +55,13 @@ function App() {
 
 export default App;
 
-import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
+import { Navigate } from "react-router-dom";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
-import { RegisterPage } from "./pages/RegisterPage";
 import DamagePage from "./pages/DamagesPage";
 import ExpressPage from "./pages/ExpressPage";
+import { RegisterPage } from "./pages/RegisterPage";
+import StockHealthDashboard from "./pages/StockScope";
 
 export function PublicRoute({ children }: { children: ReactNode }) {
   const isLoggedIn = Boolean(localStorage.getItem("x-auth-token"));

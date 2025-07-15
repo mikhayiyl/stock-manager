@@ -3,10 +3,10 @@ import { EmptyState } from "@/components/EmptyState";
 import useProducts from "@/hooks/useProducts";
 import useReceipts from "@/hooks/useReceipts";
 import { useEffect, useState } from "react";
-import { Pagination } from "./Pagination";
 import { DataTable } from "./DataTable";
 import { SkeletonBlock } from "../SkeletonBlock";
 import { useDebounce } from "@/hooks/useDebounce";
+import Pagination from "../PaginationBar";
 
 export function ReceiveData({ highlightId }: { highlightId: string | null }) {
   const { products, isLoading: loadingProducts } = useProducts();
@@ -60,7 +60,6 @@ export function ReceiveData({ highlightId }: { highlightId: string | null }) {
     });
 
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(filteredReceipts.length / itemsPerPage);
   const paginatedReceipts = filteredReceipts.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -86,13 +85,12 @@ export function ReceiveData({ highlightId }: { highlightId: string | null }) {
         highlightId={highlightId}
       />
 
-      {totalPages > 1 && (
-        <Pagination
-          totalPages={totalPages}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-        />
-      )}
+      <Pagination
+        totalItems={filteredReceipts.length}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

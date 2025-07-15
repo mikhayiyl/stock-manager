@@ -1,12 +1,13 @@
 import DamageCard from "@/components/damages/DamageCard";
 import Filters from "@/components/damages/Filters";
 import { QuantityModal } from "@/components/damages/QuantityModal";
+import Pagination from "@/components/PaginationBar";
 import useDamages from "@/hooks/useDamages";
 import { useDebounce } from "@/hooks/useDebounce";
 import useProducts from "@/hooks/useProducts";
 import damageClient from "@/services/damage-client";
 import type { Damage } from "@/types/Damage";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function DamagePage() {
   const { damages, refresh } = useDamages();
@@ -22,8 +23,14 @@ export default function DamagePage() {
   const [resolutionType, setResolutionType] = useState<
     "resolved" | "disposed" | null
   >(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const debouncedFilters = useDebounce(filters, 300);
+
+  // Reset pagination on filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedFilters]);
 
   const filteredDamages = damages.filter((d) => {
     const matchingProduct = products.find(
@@ -80,18 +87,22 @@ export default function DamagePage() {
     ? selectedDamage.quantity - totalResolved
     : 0;
 
+  const itemsPerPage = 9;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedDamages = filteredDamages.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Damage Reports</h1>
-
       {/* Filters */}
       <Filters filters={filters} setFilters={setFilters} />
-
       {/* Damage Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pt-4">
-        {filteredDamages.map((d) => {
+        {paginatedDamages.map((d) => {
           const product = products.find((p) => p.itemCode === d.itemCode);
-
           return (
             <DamageCard
               key={d._id}
@@ -105,7 +116,6 @@ export default function DamagePage() {
           );
         })}
       </div>
-
       <QuantityModal
         open={!!selectedDamage}
         max={maxQuantity}
@@ -115,6 +125,12 @@ export default function DamagePage() {
             handleResolve(selectedDamage._id, resolutionType, qty, notes);
           }
         }}
+      />
+      <Pagination
+        totalItems={filteredDamages.length}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
       />
     </div>
   );

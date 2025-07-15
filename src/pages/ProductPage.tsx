@@ -5,6 +5,7 @@ import useOrders from "@/hooks/useOrders";
 import useDamages from "@/hooks/useDamages";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { EmptyState } from "@/components/EmptyState";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -75,8 +76,8 @@ export function ProductPage() {
     ],
   };
 
-  if (!product) {
-    return <p className="text-red-600">Product not found.</p>;
+  if (!product?.itemCode) {
+    return <EmptyState message="product not found" />;
   }
 
   return (

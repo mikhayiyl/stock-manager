@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from "chart.js";
 import { Link } from "react-router-dom";
+import Pagination from "@/components/PaginationBar";
 pdfMake.vfs = pdfFonts.vfs;
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
@@ -54,7 +55,6 @@ export function SalesTrendReport() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  const totalPages = Math.ceil(rankedProducts.length / itemsPerPage);
 
   const handleExportCSV = () => {
     const rows = ["Item Code,Name,Total Ordered"];
@@ -132,7 +132,6 @@ export function SalesTrendReport() {
           className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
         />
       </div>
-
       {/* Chart */}
       <div className="bg-white p-4 rounded shadow-sm">
         <h3 className="font-semibold mb-2">Top 10 Fast-Moving Products</h3>
@@ -144,7 +143,6 @@ export function SalesTrendReport() {
           }}
         />
       </div>
-
       {/* Export Buttons */}
       <div className="flex gap-4">
         <button
@@ -160,7 +158,6 @@ export function SalesTrendReport() {
           Export PDF
         </button>
       </div>
-
       {/* Ranked List */}
       <div className="bg-white p-4 rounded shadow-sm">
         <h3 className="font-semibold mb-2">All Products by Order Volume</h3>
@@ -191,29 +188,13 @@ export function SalesTrendReport() {
           </tbody>
         </table>
       </div>
-
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-4">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <span className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
+      <Pagination
+        totalItems={rankedProducts.length}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+      />{" "}
     </div>
   );
 }

@@ -6,10 +6,10 @@ import useOrders from "@/hooks/useOrders";
 import useReceipts from "@/hooks/useReceipts";
 import { ReportActions } from "./ReportActions";
 import { StockCard } from "./StockCard";
-import { Pagination } from "./Pagination";
 import pdfMake from "pdfmake/build/pdfmake";
 import * as pdfFonts from "pdfmake/build/vfs_fonts";
 import type { Entry } from "@/types/Entry";
+import Pagination from "../PaginationBar";
 
 pdfMake.vfs = pdfFonts.vfs;
 
@@ -271,8 +271,9 @@ export function StockCardReport({ filter }: Props) {
       {totalPages > 1 && (
         <Pagination
           currentPage={currentPage}
-          totalPages={totalPages}
+          totalItems={filteredEntries.length}
           onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
         />
       )}
     </div>
