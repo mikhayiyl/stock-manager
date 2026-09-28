@@ -8,8 +8,11 @@ import { ReportActions } from "./ReportActions";
 import { StockCard } from "./StockCard";
 import pdfMake from "pdfmake/build/pdfmake";
 import * as pdfFonts from "pdfmake/build/vfs_fonts";
-import type { Entry } from "@/types/Entry";
+import type { GroupedEntry } from "@/types/Entry";
 import Pagination from "../PaginationBar";
+import useDamages from "@/hooks/useDamages";
+import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
+import { useStockMetrics } from "@/hooks/useStockMetrics";
 
 pdfMake.vfs = pdfFonts.vfs;
 
@@ -17,20 +20,17 @@ type Props = {
   filter: { from: string; to: string; search: string };
 };
 
-type GroupedEntry = {
-  receipts: Entry[];
-  orders: Entry[];
-};
-
 export function StockCardReport({ filter }: Props) {
   const [grouped, setGrouped] = useState<Map<string, GroupedEntry>>(new Map());
   const [products, setProducts] = useState<Product[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const { receipts } = useReceipts();
   const { orders } = useOrders();
+  const { damages } = useDamages();
+
   const { products: productsRes } = useProducts();
 
   const isFilterActive = () =>
@@ -49,11 +49,15 @@ export function StockCardReport({ filter }: Props) {
 
     entriesToExport.forEach(([itemCode, entry]) => {
       const product = products.find((p) => p.itemCode === itemCode);
-      const name = product?.name ?? "";
+      const metrics = useStockMetrics(
+        itemCode,
+        { damages, receipts: entry.receipts, orders: entry.orders },
+        product
+      );
 
       entry.receipts.forEach((r) => {
         rows.push(
-          `${itemCode},${name},${
+          `${itemCode},${metrics.name},${
             r.isExpress ? "Received (Express)" : "Received"
           },${r.quantity},${new Date(r.date).toLocaleDateString()}`
         );
@@ -61,12 +65,34 @@ export function StockCardReport({ filter }: Props) {
 
       entry.orders.forEach((o) => {
         rows.push(
-          `${itemCode},${name},Order,${-o.quantity},${new Date(
+          `${itemCode},${metrics.name},Order,-${o.quantity},${new Date(
             o.date
           ).toLocaleDateString()}`
         );
       });
 
+      entry.damages.forEach((d) => {
+        const disposed =
+          d.resolutionHistory?.filter((r) => r.type === "disposed") ?? [];
+        disposed.forEach((r) => {
+          rows.push(
+            `${itemCode},${metrics.name},Disposed,-${r.quantity},${new Date(
+              d.date
+            ).toLocaleDateString()}`
+          );
+        });
+      });
+
+      rows.push(`${itemCode},${metrics.name},-- Totals --,,`);
+      rows.push(
+        `${itemCode},${metrics.name},Opening Balance,${metrics.previousBalance},`
+      );
+      rows.push(
+        `${itemCode},${metrics.name},Movement Total,${metrics.movementTotal}${metrics.unit},`
+      );
+      rows.push(
+        `${itemCode},${metrics.name},Current Stock,${metrics.currentStock} ${metrics.unit},`
+      );
       rows.push("");
     });
 
@@ -78,27 +104,38 @@ export function StockCardReport({ filter }: Props) {
 
   const handleExportPDF = () => {
     const entriesToExport = getEntriesToExport();
-    const rows: any[] = [];
+
+    const contentBlocks: Content[] = [];
 
     entriesToExport.forEach(([itemCode, entry]) => {
       const product = products.find((p) => p.itemCode === itemCode);
+      if (!product) return;
+
+      const name = product.name ?? itemCode;
+      const unit = product.unit ?? "";
+      const currentStock = product.numberInStock ?? 0;
+
       const totalReceived = entry.receipts.reduce(
         (sum, r) => sum + r.quantity,
         0
       );
       const totalOrdered = entry.orders.reduce((sum, o) => sum + o.quantity, 0);
-      const currentStock = product?.numberInStock ?? 0;
+      const totalDisposed = entry.damages.reduce((sum, d) => {
+        if (!Array.isArray(d.resolutionHistory)) return sum;
+        return (
+          sum +
+          d.resolutionHistory
+            .filter((r) => r.type === "disposed")
+            .reduce((s, r) => s + r.quantity, 0)
+        );
+      }, 0);
 
-      rows.push([
-        {
-          text: `${product?.name ?? itemCode} (${itemCode})`,
-          colSpan: 3,
-          bold: true,
-          margin: [0, 10, 0, 4],
-        },
-        {},
-        {},
-      ]);
+      const previousBalance =
+        currentStock - totalReceived + totalOrdered + totalDisposed;
+      const movementTotal =
+        previousBalance + totalReceived - totalOrdered - totalDisposed;
+
+      const rows: any[] = [];
       rows.push(["Type", "Quantity", "Date"]);
 
       entry.receipts.forEach((r) => {
@@ -117,6 +154,18 @@ export function StockCardReport({ filter }: Props) {
         ]);
       });
 
+      entry.damages.forEach((d) => {
+        const disposed =
+          d.resolutionHistory?.filter((r) => r.type === "disposed") ?? [];
+        disposed.forEach((r) => {
+          rows.push([
+            "Disposed",
+            -r.quantity,
+            new Date(d.date).toLocaleDateString(),
+          ]);
+        });
+      });
+
       rows.push([
         {
           text: "— Totals —",
@@ -128,37 +177,42 @@ export function StockCardReport({ filter }: Props) {
         {},
         {},
       ]);
-      rows.push(["Total Received", totalReceived, ""]);
-      rows.push(["Total Ordered", totalOrdered, ""]);
-      rows.push([
-        {
-          text: `Remaining Stock: ${currentStock} ${product?.unit ?? ""}`,
-          colSpan: 3,
-          italics: true,
-          margin: [0, 0, 0, 10],
+      rows.push(["Opening Balance", previousBalance, ""]);
+      rows.push(["Movement Total", movementTotal, ""]);
+      rows.push(["Current Stock Balance", `${currentStock} ${unit}`, ""]);
+
+      contentBlocks.push({
+        text: `${name} (${itemCode})`,
+        style: "subheader",
+        pageBreak: "before",
+        margin: [0, 10, 0, 4],
+      });
+
+      contentBlocks.push({
+        table: {
+          headerRows: 1,
+          widths: ["*", "auto", "auto"],
+          body: rows,
         },
-        {},
-        {},
-      ]);
+        layout: "lightHorizontalLines",
+      });
     });
 
-    const docDefinition = {
+    const docDefinition: TDocumentDefinitions = {
       content: [
         { text: "Stock Movement Report", style: "header" },
-        {
-          table: {
-            headerRows: 1,
-            widths: ["*", "auto", "auto"],
-            body: rows,
-          },
-          layout: "lightHorizontalLines",
-        },
+        ...contentBlocks,
       ],
       styles: {
         header: {
           fontSize: 18,
           bold: true,
-          margin: [0, 0, 0, 10] as [number, number, number, number],
+          margin: [0, 0, 0, 10],
+        },
+        subheader: {
+          fontSize: 14,
+          bold: true,
+          margin: [0, 10, 0, 6],
         },
       },
     };
@@ -184,6 +238,20 @@ export function StockCardReport({ filter }: Props) {
       setLoading(true);
       const groupedMap = new Map<string, GroupedEntry>();
 
+      const filteredDamages = isFilterActive()
+        ? damages.filter((d) => isInRange(d.date))
+        : [...damages]
+            .sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            )
+            .slice(0, 20);
+
+      filteredDamages.forEach((d) => {
+        if (!groupedMap.has(d.itemCode))
+          groupedMap.set(d.itemCode, { receipts: [], orders: [], damages: [] });
+        groupedMap.get(d.itemCode)!.damages.push(d);
+      });
+
       const filteredReceipts = isFilterActive()
         ? receipts.filter((r) => isInRange(r.date))
         : [...receipts]
@@ -202,13 +270,13 @@ export function StockCardReport({ filter }: Props) {
 
       filteredReceipts.forEach((r) => {
         if (!groupedMap.has(r.itemCode))
-          groupedMap.set(r.itemCode, { receipts: [], orders: [] });
+          groupedMap.set(r.itemCode, { receipts: [], orders: [], damages: [] });
         groupedMap.get(r.itemCode)!.receipts.push(r);
       });
 
       filteredOrders.forEach((o) => {
         if (!groupedMap.has(o.itemCode))
-          groupedMap.set(o.itemCode, { receipts: [], orders: [] });
+          groupedMap.set(o.itemCode, { receipts: [], orders: [], damages: [] });
         groupedMap.get(o.itemCode)!.orders.push(o);
       });
 
@@ -230,7 +298,6 @@ export function StockCardReport({ filter }: Props) {
     );
   });
 
-  const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
   const paginatedEntries = filteredEntries.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -262,20 +329,19 @@ export function StockCardReport({ filter }: Props) {
               itemCode={itemCode}
               receipts={receipts}
               orders={orders}
+              damages={damages}
               product={products.find((p) => p.itemCode === itemCode)}
             />
           ))}
         </div>
       )}
 
-      {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalItems={filteredEntries.length}
-          onPageChange={setCurrentPage}
-          itemsPerPage={itemsPerPage}
-        />
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalItems={filteredEntries.length}
+        onPageChange={setCurrentPage}
+        itemsPerPage={itemsPerPage}
+      />
     </div>
   );
 }

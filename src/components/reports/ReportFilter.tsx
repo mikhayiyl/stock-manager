@@ -2,11 +2,15 @@ import { useState } from "react";
 
 type Props = {
   onFilterChange: (range: { from: string; to: string; search: string }) => void;
+  dateFilter: { today: string; firstDay: string };
 };
 
-export function ReportFilter({ onFilterChange }: Props) {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+export function ReportFilter({
+  onFilterChange,
+  dateFilter: { today, firstDay },
+}: Props) {
+  const [from, setFrom] = useState(firstDay || "");
+  const [to, setTo] = useState(today || "");
   const [search, setSearch] = useState("");
 
   const handleChange = (field: "from" | "to" | "search", value: string) => {
@@ -23,7 +27,7 @@ export function ReportFilter({ onFilterChange }: Props) {
   };
 
   return (
-    <div className="flex flex-wrap gap-4 items-end">
+    <div className="flex flex-wrap gap-4 items-end no-print">
       <div>
         <label className="text-sm font-medium p-1">From</label>
         <input

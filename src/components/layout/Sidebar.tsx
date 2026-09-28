@@ -4,13 +4,13 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const baseLinks = [
   { to: "/", label: "Dashboard" },
-  { to: "/stock", label: "Stock List" },
   { to: "/orders", label: "Orders" },
+  { to: "/stock", label: "Stock List" },
   { to: "/receive", label: "Receive Items" },
   { to: "/stock-scope", label: "Stock Scope" },
   { to: "/salestrend", label: "Sales Trend" },
-  { to: "/reports", label: "Reports" },
   { to: "/damages", label: "Damages" },
+  { to: "/reports", label: "Reports" },
 ];
 
 export default function Sidebar() {

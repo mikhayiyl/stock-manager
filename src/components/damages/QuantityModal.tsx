@@ -1,6 +1,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import getAuthUser from "@/lib/auth";
+import { toast } from "sonner";
 
 export const quantitySchema = z.object({
   quantity: z
@@ -39,6 +41,8 @@ export function QuantityModal({
   const quantity = watch("quantity");
 
   const internalSubmit = (data: QuantityFormValues) => {
+    if (!getAuthUser()?.isAdmin)
+      return toast.error("access denied. you are not an admin!");
     if (data.quantity > max) return;
     onSubmit(data.quantity, data.notes ?? "");
     reset();

@@ -125,14 +125,34 @@
     color: black;
   }
 
-  button,
   nav,
-  .no-print {
+  footer,
+  .no-print,
+  .filters,
+  button {
     display: none !important;
   }
 
   .print-page {
-    page-break-after: always;
+    display: block;
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .print-page h1,
+  h2,
+  h3,
+  h4 {
+    font-size: 16pt;
+    font-weight: bold;
+  }
+
+  .print-page ul {
+    list-style-type: disc;
+    margin-left: 1rem;
   }
 }
 
