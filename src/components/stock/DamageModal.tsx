@@ -10,7 +10,7 @@ import {
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
+import { isAxiosError } from "axios";
 
 type Props = {
   product: Product;
@@ -18,20 +18,13 @@ type Props = {
 export function DamageModal({ product }: Props) {
   const [open, setOpen] = useState(false);
 
-  const damageSchema = z.object({
-    quantity: z
-      .number({ invalid_type_error: "Quantity is required" })
-      .min(1, "Quantity must be at least 1"),
-    notes: z.string().optional(),
-  });
-
-  type DamageFormData = z.infer<typeof damageSchema>;
+  type DamageFormData = { quantity: number; notes?: string };
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<DamageFormData>({
     defaultValues: { quantity: 0, notes: "" },
     mode: "onChange", //  Ensures validation fires while typing
@@ -51,14 +44,13 @@ export function DamageModal({ product }: Props) {
       setOpen(false);
       toast.success("Damage reported successfully");
       window.dispatchEvent(new Event("products:refresh"));
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error reporting damage:", err);
-
+      const responseData = isAxiosError(err) ? err.response?.data : null;
       const message =
-        err?.response?.data?.message || // custom message from server
-        err?.response?.data || // fallback to raw response
-        err?.message || // generic JS error message
-        "Something went wrong. Please try again.";
+        typeof responseData === "string"
+          ? responseData
+          : "Something went wrong. Please try again.";
 
       toast.error(message);
     }
@@ -67,12 +59,21 @@ export function DamageModal({ product }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="text-red-600 hover:underline text-sm">
+        <button
+          type="button"
+          disabled={product.numberInStock <= 0}
+          title={
+            product.numberInStock <= 0
+              ? "No stock available to report as damaged"
+              : undefined
+          }
+          className="text-sm text-red-700 hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
+        >
           Report Damage
         </button>
       </DialogTrigger>
 
-      <DialogContent className="bg-white p-6 rounded shadow w-[400px]">
+      <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-md bg-white p-5 shadow-lg sm:p-6">
         <DialogTitle className="text-lg font-bold">
           Report Damage: {product.name}
         </DialogTitle>
@@ -83,24 +84,35 @@ export function DamageModal({ product }: Props) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="damage-quantity"
+              className="block text-sm font-medium text-gray-700"
+            >
               Quantity
             </label>
 
             <input
+              id="damage-quantity"
               type="number"
               min={1}
+              step={1}
               max={product.numberInStock}
+              disabled={product.numberInStock <= 0}
               {...register("quantity", {
                 valueAsNumber: true,
-                required: "Quantity is required",
-                validate: (value) =>
-                  value >= 1
-                    ? value <= product.numberInStock ||
-                      `Cannot exceed available stock of ${product.numberInStock}`
-                    : "Quantity must be at least 1",
+                validate: {
+                  required: (value) =>
+                    Number.isFinite(value) || "Quantity is required",
+                  wholeNumber: (value) =>
+                    Number.isInteger(value) || "Enter a whole number",
+                  positive: (value) =>
+                    value >= 1 || "Quantity must be at least 1",
+                  availableStock: (value) =>
+                    value <= product.numberInStock ||
+                    `Cannot exceed available stock of ${product.numberInStock}`,
+                },
               })}
-              className="border px-2 py-1 w-full rounded"
+              className="w-full rounded border border-gray-300 px-2 py-2 disabled:bg-gray-100"
             />
 
             <small className="text-sm text-gray-500">
@@ -113,20 +125,25 @@ export function DamageModal({ product }: Props) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="damage-notes"
+              className="block text-sm font-medium text-gray-700"
+            >
               Notes (optional)
             </label>
             <textarea
+              id="damage-notes"
               {...register("notes")}
-              className="border px-2 py-1 w-full rounded"
+              className="w-full rounded border border-gray-300 px-2 py-2"
             />
           </div>
 
           <button
             type="submit"
-            className="bg-rose-500 text-white px-4 py-2 rounded hover:bg-rose-600"
+            disabled={isSubmitting || product.numberInStock <= 0}
+            className="rounded-md bg-rose-700 px-4 py-2 font-medium text-white hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save
+            {isSubmitting ? "Saving..." : "Save damage report"}
           </button>
         </form>
       </DialogContent>

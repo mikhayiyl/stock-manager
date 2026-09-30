@@ -5,6 +5,17 @@ type Props = {
   title?: string;
 };
 
+const gridColumns: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+  5: "grid-cols-5",
+  6: "grid-cols-6",
+  7: "grid-cols-7",
+  8: "grid-cols-8",
+};
+
 export function SkeletonBlock({
   variant = "table",
   rows = 5,
@@ -20,7 +31,10 @@ export function SkeletonBlock({
       {variant === "table" ? (
         <div className="space-y-2">
           {Array.from({ length: rows }).map((_, i) => (
-            <div key={i} className={`grid grid-cols-${columns} gap-4`}>
+            <div
+              key={i}
+              className={`grid ${gridColumns[columns] ?? "grid-cols-5"} gap-4`}
+            >
               {Array.from({ length: columns }).map((_, j) => (
                 <div key={j} className="h-4 bg-gray-200 rounded" />
               ))}

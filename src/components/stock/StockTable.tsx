@@ -3,59 +3,40 @@ import { DamageModal } from "@/components/stock/DamageModal";
 import getAuthUser from "@/lib/auth";
 import { EmptyState } from "@/components/EmptyState";
 import { SkeletonBlock } from "../SkeletonBlock";
-import { useDebounce } from "@/hooks/useDebounce";
-
-type Product = {
-  _id: string;
-  itemCode: string;
-  name: string;
-  numberInStock: number;
-  damaged: number;
-  unit: string;
-  received: string;
-};
+import type { Product } from "@/types/Product";
 
 type Props = {
   products: Product[];
-  search: string;
   isLoading: boolean;
-  currentPage: number;
-  itemsPerPage: number;
+  emptyMessage: string;
 };
 
 export default function StockTable({
   products,
-  search,
   isLoading,
-  currentPage,
-  itemsPerPage,
+  emptyMessage,
 }: Props) {
-  const debouncedSearch = useDebounce(search, 400);
-
-  const filtered = products.filter((p) =>
-    `${p.itemCode} ${p.name}`
-      .toLowerCase()
-      .includes(debouncedSearch.toLowerCase())
-  );
-
-  const paginated = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const isAdmin = getAuthUser()?.isAdmin;
+  const isAdmin = getAuthUser()?.isAdmin === true;
 
   if (isLoading) {
-    return <SkeletonBlock rows={10} columns={7} variant="card" />;
+    return (
+      <div className="overflow-x-auto">
+        <SkeletonBlock
+          rows={8}
+          columns={isAdmin ? 7 : 6}
+          title="Loading stock products..."
+        />
+      </div>
+    );
   }
 
-  if (filtered.length === 0) {
-    return <EmptyState message="No products found." />;
+  if (products.length === 0) {
+    return <EmptyState message={emptyMessage} />;
   }
 
   return (
-    <div className="overflow-x-auto bg-white rounded shadow">
-      <table className="min-w-full text-sm">
+    <div className="overflow-x-auto rounded-md border border-gray-200 bg-white shadow-sm">
+      <table className="w-full min-w-[720px] text-sm">
         <thead className="bg-gray-100 border-b text-left">
           <tr>
             <th className="p-3">Item Code</th>
@@ -68,7 +49,7 @@ export default function StockTable({
           </tr>
         </thead>
         <tbody>
-          {paginated.map((product) => (
+          {products.map((product) => (
             <tr
               key={product._id}
               className={
