@@ -1,17 +1,17 @@
 import StockHealthCard from "./StockHealthCard";
+import { EmptyState } from "@/components/EmptyState";
+import type { StockHealthInsight } from "@/hooks/useStockHealthInsights";
 
 type Props = {
-  items: {
-    product: { itemCode: string; name: string; numberInStock: number };
-    badge: "Critical" | "Warning" | "Slow";
-    lastSold: number | undefined;
-    requiredStock: number;
-  }[];
+  items: StockHealthInsight[];
+  emptyMessage: string;
 };
 
-export default function StockHealthCardGrid({ items }: Props) {
+export default function StockHealthCardGrid({ items, emptyMessage }: Props) {
+  if (items.length === 0) return <EmptyState message={emptyMessage} />;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => (
         <StockHealthCard key={item.product.itemCode} {...item} />
       ))}

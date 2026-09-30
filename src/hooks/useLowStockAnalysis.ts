@@ -1,6 +1,8 @@
 import type { Product } from "@/types/Product";
 import type { Order } from "@/types/Order";
 
+export const REORDER_COVER_DAYS = 7;
+
 export function useLowStockAnalysis(orders: Order[]) {
   const now = new Date();
   const thirtyDaysAgo = new Date(now);
@@ -14,33 +16,19 @@ export function useLowStockAnalysis(orders: Order[]) {
       salesMap.set(o.itemCode, (salesMap.get(o.itemCode) ?? 0) + o.quantity);
     }
   });
-
-  // Dynamic buffer days based on sales velocity
-  const getBufferDays = (dailyRate: number): number => {
-    if (dailyRate >= 5) return 14;
-    if (dailyRate >= 1) return 7;
-    return 3;
-  };
-
-  // Compute required stock for a product
   const getRequiredStock = (product: Product): number => {
     const totalSales = salesMap.get(product.itemCode) ?? 0;
-    const dailyRate = totalSales / 30;
-    const bufferDays = getBufferDays(dailyRate);
-    return Math.ceil(dailyRate * bufferDays);
+    return Math.ceil((totalSales / 30) * REORDER_COVER_DAYS);
   };
 
-  // Determine if a product is low in stock
   const isLowStock = (product: Product): boolean => {
     const totalSales = salesMap.get(product.itemCode) ?? 0;
-    if (totalSales < 3) return false;
-    const required = getRequiredStock(product);
-    return product.numberInStock <= required;
+    if (totalSales <= 0 || product.numberInStock <= 0) return false;
+    return product.numberInStock <= getRequiredStock(product);
   };
 
   return {
     salesMap,
-    getBufferDays,
     getRequiredStock,
     isLowStock,
   };
