@@ -2,80 +2,130 @@ import { useState } from "react";
 import { saveAs } from "file-saver";
 import pdfMake from "pdfmake/build/pdfmake";
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
-
 import * as pdfFonts from "pdfmake/build/vfs_fonts";
-import useProducts from "@/hooks/useProducts";
-import useOrders from "@/hooks/useOrders";
 import { Bar } from "react-chartjs-2";
 import {
-  Chart as ChartJS,
   BarElement,
   CategoryScale,
+  Chart as ChartJS,
   LinearScale,
   Tooltip,
 } from "chart.js";
 import { Link } from "react-router-dom";
 import Pagination from "@/components/PaginationBar";
+import { EmptyState } from "@/components/EmptyState";
+import { SkeletonBlock } from "@/components/SkeletonBlock";
+import useOrders from "@/hooks/useOrders";
+import useProducts from "@/hooks/useProducts";
+
 pdfMake.vfs = pdfFonts.vfs;
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
-export function SalesTrendReport() {
-  const { products } = useProducts();
-  const { orders } = useOrders();
+const csvCell = (value: string | number) => {
+  const text = String(value);
+  const safeText = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+};
 
+export function SalesTrendReport() {
+  const { products, isLoading: productsLoading } = useProducts();
+  const { orders, isLoading: ordersLoading } = useOrders();
+  const isLoading = productsLoading || ordersLoading;
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const invalidDateRange =
+    Boolean(dateRange.from && dateRange.to) && dateRange.from > dateRange.to;
 
-  const isInRange = (dateStr: string) => {
-    const entryTime = new Date(dateStr).getTime();
+  const isInRange = (dateString: string) => {
+    const orderTime = new Date(dateString).getTime();
+    if (!Number.isFinite(orderTime)) return false;
+
     const fromTime = dateRange.from
-      ? new Date(dateRange.from + "T00:00:00").getTime()
+      ? new Date(`${dateRange.from}T00:00:00`).getTime()
       : -Infinity;
     const toTime = dateRange.to
-      ? new Date(dateRange.to + "T23:59:59").getTime()
+      ? new Date(`${dateRange.to}T23:59:59.999`).getTime()
       : Infinity;
-    return entryTime >= fromTime && entryTime <= toTime;
+
+    return orderTime >= fromTime && orderTime <= toTime;
   };
 
-  const orderMap = new Map<string, number>();
-  orders.forEach((o) => {
-    if (!isInRange(o.date)) return;
-    orderMap.set(o.itemCode, (orderMap.get(o.itemCode) ?? 0) + o.quantity);
+  const ordersInRange = invalidDateRange
+    ? []
+    : orders.filter((order) => isInRange(order.date));
+  const unitsByItemCode = new Map<string, number>();
+  ordersInRange.forEach((order) => {
+    unitsByItemCode.set(
+      order.itemCode,
+      (unitsByItemCode.get(order.itemCode) ?? 0) + order.quantity,
+    );
   });
 
   const rankedProducts = products
-    .map((p) => ({
-      ...p,
-      totalOrdered: orderMap.get(p.itemCode) ?? 0,
+    .map((product) => ({
+      ...product,
+      totalOrdered: unitsByItemCode.get(product.itemCode) ?? 0,
     }))
-    .sort((a, b) => b.totalOrdered - a.totalOrdered);
-
-  const paginated = rankedProducts.slice(
+    .sort(
+      (left, right) =>
+        right.totalOrdered - left.totalOrdered ||
+        left.name.localeCompare(right.name),
+    );
+  const chartProducts = rankedProducts
+    .filter((product) => product.totalOrdered > 0)
+    .slice(0, 10);
+  const paginatedProducts = rankedProducts.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
+  const chartData = {
+    labels: chartProducts.map((product) => product.itemCode),
+    datasets: [
+      {
+        label: "Units ordered",
+        data: chartProducts.map((product) => product.totalOrdered),
+        backgroundColor: "#0f766e",
+        borderRadius: 3,
+        barPercentage: 0.72,
+      },
+    ],
+  };
+
   const handleExportCSV = () => {
-    const rows = ["Item Code,Name,Total Ordered"];
-    rankedProducts.forEach((p) => {
-      rows.push(`${p.itemCode},${p.name},${p.totalOrdered}`);
-    });
-    const blob = new Blob([rows.join("\n")], {
+    const rows = [
+      ["Item Code", "Name", "Total Units Ordered"],
+      ...rankedProducts.map((product) => [
+        product.itemCode,
+        product.name,
+        String(product.totalOrdered),
+      ]),
+    ].map((row) => row.map(csvCell).join(","));
+
+    const blob = new Blob([`\uFEFF${rows.join("\r\n")}`], {
       type: "text/csv;charset=utf-8;",
     });
-    saveAs(blob, `sales_trend_${Date.now()}.csv`);
+    saveAs(blob, `sales_by_product_${Date.now()}.csv`);
   };
 
   const handleExportPDF = () => {
-    const rows = [["Item Code", "Name", "Total Ordered"]];
-    rankedProducts.forEach((p) => {
-      rows.push([p.itemCode, p.name, String(p.totalOrdered)]);
-    });
+    const rows: string[][] = [
+      ["Item Code", "Name", "Total Units Ordered"],
+      ...rankedProducts.map((product) => [
+        product.itemCode,
+        product.name,
+        String(product.totalOrdered),
+      ]),
+    ];
 
     const docDefinition: TDocumentDefinitions = {
       content: [
-        { text: "Sales Trend Report", style: "header" },
+        { text: "Sales by Product", style: "header" },
+        {
+          text: `Date range: ${dateRange.from || "All dates"} to ${dateRange.to || "All dates"}`,
+          margin: [0, 0, 0, 10],
+        },
         {
           table: {
             headerRows: 1,
@@ -89,112 +139,218 @@ export function SalesTrendReport() {
         header: {
           fontSize: 18,
           bold: true,
-          margin: [0, 0, 0, 10], // ✅ Valid 4-tuple
+          margin: [0, 0, 0, 10],
         },
       },
     };
 
-    pdfMake.createPdf(docDefinition).download(`sales_trend_${Date.now()}.pdf`);
+    pdfMake
+      .createPdf(docDefinition)
+      .download(`sales_by_product_${Date.now()}.pdf`);
   };
 
-  const chartData = {
-    labels: rankedProducts.slice(0, 10).map((p) => p.name),
-    datasets: [
-      {
-        label: "Total Ordered",
-        data: rankedProducts.slice(0, 10).map((p) => p.totalOrdered),
-        backgroundColor: "#3b82f6",
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: "y" as const,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context: { parsed: { x: number } }) =>
+            `${context.parsed.x.toLocaleString()} units ordered`,
+        },
       },
-    ],
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        ticks: { precision: 0 },
+        title: { display: true, text: "Units ordered" },
+      },
+      y: {
+        reverse: true,
+        grid: { display: false },
+        ticks: { autoSkip: false },
+      },
+    },
   };
 
   return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4">
-        <input
-          type="date"
-          value={dateRange.from}
-          onChange={(e) => {
-            setCurrentPage(1);
-            setDateRange((prev) => ({ ...prev, from: e.target.value }));
-          }}
-          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
-        />
-        <span>to</span>
-        <input
-          type="date"
-          value={dateRange.to}
-          onChange={(e) => {
-            setCurrentPage(1);
-            setDateRange((prev) => ({ ...prev, to: e.target.value }));
-          }}
-          className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
-        />
-      </div>
-      {/* Chart */}
-      <div className="bg-white p-4 rounded shadow-sm">
-        <h3 className="font-semibold mb-2">Top 10 Fast-Moving Products</h3>
-        <Bar
-          data={chartData}
-          options={{
-            responsive: true,
-            plugins: { legend: { display: false } },
-          }}
-        />
-      </div>
-      {/* Export Buttons */}
-      <div className="flex gap-4">
+    <div className="min-w-0 space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900">Sales by product</h2>
+
+      <section className="flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
+        <div>
+          <label
+            className="block text-sm font-medium text-gray-700"
+            htmlFor="sales-from-date"
+          >
+            From
+          </label>
+          <input
+            id="sales-from-date"
+            type="date"
+            max={dateRange.to || undefined}
+            value={dateRange.from}
+            onChange={(event) => {
+              setCurrentPage(1);
+              setDateRange((previous) => ({
+                ...previous,
+                from: event.target.value,
+              }));
+            }}
+            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 sm:w-auto"
+          />
+        </div>
+        <div>
+          <label
+            className="block text-sm font-medium text-gray-700"
+            htmlFor="sales-to-date"
+          >
+            To
+          </label>
+          <input
+            id="sales-to-date"
+            type="date"
+            min={dateRange.from || undefined}
+            value={dateRange.to}
+            onChange={(event) => {
+              setCurrentPage(1);
+              setDateRange((previous) => ({
+                ...previous,
+                to: event.target.value,
+              }));
+            }}
+            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 sm:w-auto"
+          />
+        </div>
         <button
+          type="button"
+          disabled={!dateRange.from && !dateRange.to}
+          onClick={() => {
+            setDateRange({ from: "", to: "" });
+            setCurrentPage(1);
+          }}
+          className="rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-gray-400"
+        >
+          Clear dates
+        </button>
+        {invalidDateRange && (
+          <p className="w-full text-sm text-red-700" role="alert">
+            The start date must be on or before the end date.
+          </p>
+        )}
+      </section>
+
+      {isLoading ? (
+        <SkeletonBlock variant="card" rows={1} title="Loading sales data..." />
+      ) : invalidDateRange ? null : chartProducts.length === 0 ? (
+        <EmptyState message="No product orders were placed in this date range." />
+      ) : (
+        <section className="mx-auto w-full max-w-5xl rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+          <h3 className="mb-3 text-base font-semibold text-gray-900">
+            Top 10 products by units ordered
+          </h3>
+          <div className="h-[320px] w-full sm:h-[380px]">
+            <Bar data={chartData} options={chartOptions} />
+          </div>
+        </section>
+      )}
+
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
           onClick={handleExportCSV}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          disabled={isLoading || invalidDateRange || products.length === 0}
+          className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Export CSV
         </button>
         <button
+          type="button"
           onClick={handleExportPDF}
-          className="bg-green-600 text-white px-4 py-2 rounded"
+          disabled={isLoading || invalidDateRange || products.length === 0}
+          className="rounded-md bg-green-700 px-4 py-2 font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Export PDF
         </button>
       </div>
-      {/* Ranked List */}
-      <div className="bg-white p-4 rounded shadow-sm">
-        <h3 className="font-semibold mb-2">All Products by Order Volume</h3>
-        <table className="w-full text-sm border">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2 border">#</th>
-              <th className="p-2 border">Item Code</th>
-              <th className="p-2 border">Name</th>
-              <th className="p-2 border">Total Ordered</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginated.map((p, i) => (
-              <tr key={p.itemCode}>
-                <td className="p-2 border">
-                  {(currentPage - 1) * itemsPerPage + i + 1}
-                </td>
-                <td className="p-2 border text-blue-600 underline">
-                  <Link to={`/product/${p.itemCode}`}>{p.itemCode}</Link>
-                </td>
-                <td className="p-2 border text-blue-600 underline">
-                  <Link to={`/product/${p.itemCode}`}>{p.name}</Link>
-                </td>
-                <td className="p-2 border">{p.totalOrdered}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {/* Pagination */}
-      <Pagination
-        totalItems={rankedProducts.length}
-        currentPage={currentPage}
-        itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
-      />{" "}
+
+      <section className="min-w-0 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+        <h3 className="mb-3 text-base font-semibold text-gray-900">
+          Product ranking by units ordered
+        </h3>
+        {isLoading ? (
+          <SkeletonBlock
+            rows={6}
+            columns={4}
+            title="Loading product sales ranking..."
+          />
+        ) : products.length === 0 ? (
+          <EmptyState message="No products found." />
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead className="border-b bg-gray-100 text-gray-700">
+                  <tr>
+                    <th scope="col" className="p-3">
+                      #
+                    </th>
+                    <th scope="col" className="p-3">
+                      Item code
+                    </th>
+                    <th scope="col" className="p-3">
+                      Name
+                    </th>
+                    <th scope="col" className="p-3">
+                      Units ordered
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedProducts.map((product, index) => (
+                    <tr
+                      key={product.itemCode}
+                      className="border-b last:border-0"
+                    >
+                      <td className="p-3 tabular-nums">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </td>
+                      <td className="p-3 font-mono">
+                        <Link
+                          className="text-blue-700 underline underline-offset-2"
+                          to={`/product/${product.itemCode}`}
+                        >
+                          {product.itemCode}
+                        </Link>
+                      </td>
+                      <td className="p-3">
+                        <Link
+                          className="text-blue-700 underline underline-offset-2"
+                          to={`/product/${product.itemCode}`}
+                        >
+                          {product.name}
+                        </Link>
+                      </td>
+                      <td className="p-3 tabular-nums">
+                        {product.totalOrdered.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              totalItems={rankedProducts.length}
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </>
+        )}
+      </section>
     </div>
   );
 }
