@@ -10,7 +10,7 @@ export function useLowStockAnalysis(orders: Order[]) {
   const salesMap = new Map<string, number>();
   orders.forEach((o) => {
     const orderDate = new Date(o.date);
-    if (orderDate >= thirtyDaysAgo) {
+    if (orderDate >= thirtyDaysAgo && orderDate <= now) {
       salesMap.set(o.itemCode, (salesMap.get(o.itemCode) ?? 0) + o.quantity);
     }
   });

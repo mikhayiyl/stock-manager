@@ -1,62 +1,81 @@
-import useProducts from "@/hooks/useProducts";
 import { EmptyState } from "@/components/EmptyState";
 import { Link } from "react-router-dom";
 import { SkeletonBlock } from "../SkeletonBlock";
+import type { Product } from "@/types/Product";
+import type { Receipt } from "@/types/Receipt";
 
-export function RecentMovements() {
-  const { products, isLoading } = useProducts();
+type Props = {
+  products: Product[];
+  receipts: Receipt[];
+  isLoading: boolean;
+};
 
-  const sorted = [...products]
-    .sort(
-      (a, b) => new Date(b.received).getTime() - new Date(a.received).getTime()
-    )
+export function RecentMovements({ products, receipts, isLoading }: Props) {
+  const productByCode = new Map(
+    products.map((product) => [product.itemCode, product]),
+  );
+  const recentReceipts = [...receipts]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
   if (isLoading) {
-    return <SkeletonBlock variant="table" />;
+    return <SkeletonBlock variant="table" columns={3} />;
   }
 
-  if (products.length === 0) {
-    return <EmptyState message="No products data yet." />;
+  if (recentReceipts.length === 0) {
+    return <EmptyState message="No stock receipts yet." />;
   }
 
   return (
-    <div className="bg-white p-4 rounded shadow">
-      <h3 className="text-lg font-semibold mb-4">Recent Stock Updates</h3>
-      <table className="w-full text-sm">
-        <thead className="text-left border-b">
-          <tr>
-            <th>Code</th>
-            <th>Item</th>
-            <th>Stock</th>
-            <th>Damaged</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((p) => (
-            <tr key={p._id} className="border-b">
-              <td>{p.itemCode}</td>
-              <td>{p.name}</td>
-              <td>{p.numberInStock}</td>
-              <td>{p.damaged}</td>
-              <td>
-                {new Date(p.received).toLocaleString("en-GB", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                  hour12: true,
-                })}
-              </td>
+    <section className="min-w-0 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+      <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        Recent stock receipts
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[32rem] text-left text-sm">
+          <thead className="border-b text-xs uppercase tracking-wide text-gray-500">
+            <tr>
+              <th className="pb-3 pr-4 font-medium">Item</th>
+              <th className="pb-3 pr-4 font-medium">Quantity received</th>
+              <th className="pb-3 font-medium">Date</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {recentReceipts.map((receipt) => {
+              const product = productByCode.get(receipt.itemCode);
+
+              return (
+                <tr key={receipt._id} className="border-b last:border-0">
+                  <td className="py-3 pr-4">
+                    <div className="font-medium text-gray-900">
+                      {product?.name ?? receipt.itemCode}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {receipt.itemCode}
+                    </div>
+                  </td>
+                  <td className="py-3 pr-4 tabular-nums text-gray-700">
+                    {receipt.quantity.toLocaleString()} {product?.unit}
+                  </td>
+                  <td className="whitespace-nowrap py-3 text-gray-600">
+                    {new Date(receipt.date).toLocaleString("en-GB", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                      hour12: true,
+                    })}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       <Link
         to="/stock"
-        className="inline-block mt-3 text-purple-600 underline hover:text-purple-800"
+        className="mt-4 inline-block text-sm font-medium text-blue-700 hover:text-blue-900"
       >
-        View stock →
+        View stock
       </Link>
-    </div>
+    </section>
   );
 }

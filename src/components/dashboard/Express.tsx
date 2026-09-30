@@ -1,22 +1,17 @@
-import { useEffect, useState } from "react";
-import useReceipts from "@/hooks/useReceipts";
 import { Link } from "react-router-dom";
 import { EmptyState } from "@/components/EmptyState";
 import { SkeletonBlock } from "../SkeletonBlock";
+import type { Receipt } from "@/types/Receipt";
 
-export function LatestExpress() {
-  const { receipts, isLoading } = useReceipts();
-  const [latestExpress, setLatestExpress] = useState<
-    null | (typeof receipts)[0]
-  >(null);
+type Props = {
+  receipts: Receipt[];
+  isLoading: boolean;
+};
 
-  useEffect(() => {
-    const expressOnly = receipts
-      .filter((r) => r.isExpress)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    setLatestExpress(expressOnly[0] ?? null);
-  }, [receipts]);
+export function LatestExpress({ receipts, isLoading }: Props) {
+  const latestExpress = receipts
+    .filter((receipt) => receipt.isExpress)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
   if (isLoading) {
     return <SkeletonBlock variant="card" />;
@@ -27,23 +22,23 @@ export function LatestExpress() {
   }
 
   return (
-    <div className="bg-purple-50 border border-purple-200 rounded shadow p-4 text-sm">
-      <h4 className="text-lg font-semibold text-purple-700 mb-2">
-        Latest Express Delivery
-      </h4>
+    <section className="min-w-0 rounded-md border border-gray-200 bg-white p-4 text-sm shadow-sm">
+      <h3 className="mb-4 text-lg font-semibold text-gray-900">
+        Latest express delivery
+      </h3>
       <p>
-        <strong>Item Code:</strong> {latestExpress.itemCode}
+        <strong>Item code:</strong> {latestExpress.itemCode}
       </p>
-      <p>
-        <strong>Quantity:</strong> {latestExpress.quantity}
+      <p className="mt-2">
+        <strong>Quantity:</strong> {latestExpress.quantity.toLocaleString()}
       </p>
-      <p>
-        <strong>Client:</strong> {latestExpress.client ?? "—"}
+      <p className="mt-2 break-words">
+        <strong>Client:</strong> {latestExpress.client || "—"}
       </p>
-      <p>
-        <strong>Delivery Note:</strong> {latestExpress.deliveryNote ?? "—"}
+      <p className="mt-2 break-words">
+        <strong>Delivery note:</strong> {latestExpress.deliveryNote || "—"}
       </p>
-      <p>
+      <p className="mt-2">
         <strong>Date:</strong>{" "}
         {new Date(latestExpress.date).toLocaleString("en-GB", {
           dateStyle: "medium",
@@ -54,10 +49,10 @@ export function LatestExpress() {
 
       <Link
         to="/express"
-        className="inline-block mt-3 text-purple-600 underline hover:text-purple-800"
+        className="mt-4 inline-block font-medium text-blue-700 hover:text-blue-900"
       >
-        View all express deliveries →
+        View express deliveries
       </Link>
-    </div>
+    </section>
   );
 }

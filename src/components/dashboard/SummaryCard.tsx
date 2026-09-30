@@ -1,65 +1,105 @@
 import { useLowStockAnalysis } from "@/hooks/useLowStockAnalysis";
-import useOrders from "@/hooks/useOrders";
-import useProducts from "@/hooks/useProducts";
 import type { Order } from "@/types/Order";
+import type { Product } from "@/types/Product";
+import {
+  AlertTriangle,
+  Boxes,
+  Package,
+  PackageX,
+  ShieldAlert,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-export function SummaryCards() {
-  const { products } = useProducts();
-  const { orders } = useOrders();
-  // Total number of distinct products
-  const totalItems = products.length;
+type Props = {
+  products: Product[];
+  orders: Order[];
+  isLoading: boolean;
+};
 
-  // Total damaged quantity across all products
-  const totalDamaged = products.reduce((sum, p) => sum + p.damaged, 0);
-
-  // Count of products that are completely out of stock
-  const notInStock = products.filter((p) => p.numberInStock === 0).length;
-
-  //Use shared low stock logic
+export function SummaryCards({ products, orders, isLoading }: Props) {
   const { isLowStock } = useLowStockAnalysis(orders);
-  const lowStock = products.filter(isLowStock).length;
-
-  // Rank products by total quantity ordered (all time)
-  const orderMap = new Map<string, number>();
-  orders.forEach((o: Order) => {
-    orderMap.set(o.itemCode, (orderMap.get(o.itemCode) ?? 0) + o.quantity);
-  });
-
-  const ranked = products
-    .map((p) => ({
-      ...p,
-      totalOrdered: orderMap.get(p.itemCode) ?? 0,
-    }))
-    .sort((a, b) => b.totalOrdered - a.totalOrdered);
-
-  const fastMover = ranked[0]?.name ?? "–";
-  const slowMover = ranked[ranked.length - 1]?.name ?? "–";
+  const metrics = [
+    {
+      title: "Products",
+      value: products.length,
+      Icon: Package,
+      color: "text-blue-700 bg-blue-50",
+    },
+    {
+      title: "Units on hand",
+      value: products.reduce((sum, product) => sum + product.numberInStock, 0),
+      Icon: Boxes,
+      color: "text-teal-700 bg-teal-50",
+    },
+    {
+      title: "Low stock",
+      value: products.filter(isLowStock).length,
+      Icon: AlertTriangle,
+      color: "text-amber-700 bg-amber-50",
+    },
+    {
+      title: "Out of stock",
+      value: products.filter((product) => product.numberInStock <= 0).length,
+      Icon: PackageX,
+      color: "text-red-700 bg-red-50",
+    },
+    {
+      title: "Damaged units",
+      value: products.reduce((sum, product) => sum + product.damaged, 0),
+      Icon: ShieldAlert,
+      color: "text-orange-700 bg-orange-50",
+    },
+  ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card title="Total Items" value={totalItems} color="bg-blue-100" />
-      <Card title="Low Stock" value={lowStock} color="bg-red-100" />
-      <Card title="Total Damaged" value={totalDamaged} color="bg-rose-100" />
-      <Card title="Not In Stock" value={notInStock} color="bg-orange-100" />
-      <Card title="Fast Movers" value={fastMover} color="bg-green-100" />
-      <Card title="Slow Movers" value={slowMover} color="bg-yellow-100" />
+    <div
+      className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5 xl:gap-4"
+      aria-busy={isLoading}
+    >
+      {metrics.map(({ title, value, Icon, color }) => (
+        <MetricCard
+          key={title}
+          title={title}
+          value={value}
+          Icon={Icon}
+          color={color}
+          isLoading={isLoading}
+        />
+      ))}
     </div>
   );
 }
 
-function Card({
+function MetricCard({
   title,
   value,
+  Icon,
   color,
+  isLoading,
 }: {
   title: string;
-  value: any;
+  value: number;
+  Icon: LucideIcon;
   color: string;
+  isLoading: boolean;
 }) {
   return (
-    <div className={`p-4 rounded shadow ${color}`}>
-      <h4 className="text-sm font-semibold text-gray-600">{title}</h4>
-      <p className="text-2xl font-bold text-gray-800">{value}</p>
-    </div>
+    <article className="min-w-0 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-medium text-gray-600">{title}</h3>
+        <span
+          className={`grid size-9 shrink-0 place-items-center rounded-md ${color}`}
+        >
+          <Icon aria-hidden="true" className="size-5" />
+        </span>
+      </div>
+      {isLoading ? (
+        <div className="mt-3 h-8 w-16 animate-pulse rounded bg-gray-100" />
+      ) : (
+        <p className="mt-2 break-words text-2xl font-semibold tabular-nums text-gray-900">
+          {value.toLocaleString()}
+        </p>
+      )}
+    </article>
   );
 }
