@@ -1,7 +1,7 @@
 import productClient from "@/services/product-client";
 import receiptClient from "@/services/receipt-client";
 import type { Product } from "@/types/Product";
-import { CanceledError } from "axios";
+import { CanceledError, isAxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -21,171 +21,333 @@ type Props = {
 };
 
 export function ReceiveItemForm({ onStockUpdate }: Props) {
-  const { register, handleSubmit, watch, reset } = useForm<FormData>({
-    defaultValues: {
-      isExpress: false,
-      client: "",
-      deliveryNote: "",
-    },
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    setError,
+    setFocus,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    defaultValues: { isExpress: false, client: "", deliveryNote: "" },
   });
 
   const [matchedProduct, setMatchedProduct] = useState<Product | null>(null);
+  const [isLookingUpProduct, setIsLookingUpProduct] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const itemCode = watch("itemCode");
   const isExpress = watch("isExpress");
+  const normalizedItemCode = itemCode?.trim() ?? "";
+  const currentProduct =
+    matchedProduct?.itemCode === normalizedItemCode ? matchedProduct : null;
 
   useEffect(() => {
-    if (itemCode?.trim()) {
-      const { request, cancel } = productClient.getAll<Product>({ itemCode });
+    let isCurrentRequest = true;
+    setMatchedProduct(null);
 
-      request
-        .then((res) => setMatchedProduct(res.data[0] ?? null))
-        .catch((err) => {
-          if (err instanceof CanceledError) return;
-          console.error("Fetch error:", err);
-          setMatchedProduct(null);
-        });
-
-      return () => cancel();
-    } else {
-      setMatchedProduct(null);
+    if (!normalizedItemCode) {
+      setIsLookingUpProduct(false);
+      return;
     }
-  }, [itemCode]);
+
+    setIsLookingUpProduct(true);
+    const { request, cancel } = productClient.getAll<Product>({
+      itemCode: normalizedItemCode,
+    });
+
+    request
+      .then((response) => {
+        if (!isCurrentRequest) return;
+        setMatchedProduct(
+          response.data.find(
+            (product) => product.itemCode === normalizedItemCode,
+          ) ?? null,
+        );
+      })
+      .catch((error) => {
+        if (!isCurrentRequest || error instanceof CanceledError) return;
+        console.error("Product lookup failed:", error);
+      })
+      .finally(() => {
+        if (isCurrentRequest) setIsLookingUpProduct(false);
+      });
+
+    return () => {
+      isCurrentRequest = false;
+      cancel();
+    };
+  }, [normalizedItemCode]);
 
   const onSubmit = async (data: FormData) => {
-    const token = localStorage.getItem("x-auth-token");
-    if (!token) return toast.error("Access denied");
+    if (!Number.isFinite(data.quantity) || data.quantity < 1) return;
+    if (isLookingUpProduct) {
+      toast.error("Wait for the item lookup to finish.");
+      return;
+    }
 
-    if (!data.quantity || data.quantity < 1) return;
+    const code = data.itemCode.trim();
+    const product = matchedProduct?.itemCode === code ? matchedProduct : null;
+
+    if (!data.isExpress && !product) {
+      const name = data.name?.trim() ?? "";
+      if (name.length < 5 || name.length > 50) {
+        setError("name", {
+          type: "validate",
+          message: "Product name must be 5 to 50 characters",
+        });
+        setFocus("name");
+        return;
+      }
+
+      const unit = data.unit?.trim() ?? "";
+      if (unit.length < 1 || unit.length > 20) {
+        setError("unit", {
+          type: "validate",
+          message: "Unit must be 1 to 20 characters",
+        });
+        setFocus("unit");
+        return;
+      }
+    }
 
     try {
-      const today = new Date().toISOString();
-
-      const payload = {
-        itemCode: data.itemCode,
+      setSubmitError(null);
+      const response = await receiptClient.create({
+        itemCode: code,
         quantity: data.quantity,
-        date: today,
+        date: new Date().toISOString(),
         isExpress: data.isExpress,
-        client: data.isExpress ? data.client : null,
-        deliveryNote: data.isExpress ? data.deliveryNote : null,
-        name: matchedProduct?.name ?? data.name,
-        unit: matchedProduct?.unit ?? data.unit,
-      };
+        client: data.isExpress ? data.client.trim() : null,
+        deliveryNote: data.isExpress ? data.deliveryNote.trim() : null,
+        name: data.isExpress ? undefined : (product?.name ?? data.name.trim()),
+        unit: data.isExpress ? undefined : (product?.unit ?? data.unit.trim()),
+      });
 
-      const receipt = await receiptClient.create(payload);
-
-      toast.success("Receipt logged successfully");
+      toast.success(
+        data.isExpress ? "Express delivery logged." : "Stock receipt logged.",
+      );
       reset();
       setMatchedProduct(null);
-
       window.dispatchEvent(new Event("receipts:refresh"));
       if (!data.isExpress) window.dispatchEvent(new Event("products:refresh"));
 
-      // If backend sends updatedId, pass it on
-      if (receipt?.data?._id) {
-        onStockUpdate(receipt.data._id);
+      if (!data.isExpress && response.data?._id) {
+        onStockUpdate(response.data._id);
       }
-    } catch (err) {
-      console.error("Receipt failed:", err);
-      toast.error("Failed to log receipt");
+    } catch (error) {
+      console.error("Receipt failed:", error);
+      const responseData = isAxiosError(error) ? error.response?.data : null;
+      const message =
+        typeof responseData === "string"
+          ? responseData
+          : "Failed to save receipt. Please try again.";
+      setSubmitError(message);
+      toast.error(message);
     }
   };
 
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="bg-white p-6 rounded shadow max-w-xl space-y-4"
+      className="w-full max-w-xl space-y-4 rounded-md border border-gray-200 bg-white p-5 shadow-sm"
     >
       <div>
-        <label className="text-sm font-medium">Item Code</label>
+        <label className="text-sm font-medium" htmlFor="receipt-item-code">
+          Item code
+        </label>
         <input
-          {...register("itemCode", { required: true })}
-          className="w-full border px-3 py-2 rounded mt-1"
+          id="receipt-item-code"
+          {...register("itemCode", {
+            required: "Item code is required",
+            minLength: {
+              value: 5,
+              message: "Item code must be at least 5 characters",
+            },
+            maxLength: {
+              value: 50,
+              message: "Item code cannot exceed 50 characters",
+            },
+          })}
+          className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
           placeholder="e.g. CEM-50GREY"
         />
+        {errors.itemCode && (
+          <p className="mt-1 text-sm text-red-600">{errors.itemCode.message}</p>
+        )}
       </div>
 
-      {matchedProduct ? (
-        <div className="bg-green-50 border p-3 rounded text-sm">
+      {currentProduct ? (
+        <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
           <p>
-            <strong>Item:</strong> {matchedProduct.name}
+            <strong>Item:</strong> {currentProduct.name}
           </p>
           <p>
-            <strong>Current Stock:</strong> {matchedProduct.numberInStock}{" "}
-            {matchedProduct.unit}
+            <strong>Current stock:</strong> {currentProduct.numberInStock}{" "}
+            {currentProduct.unit}
           </p>
         </div>
-      ) : (
+      ) : isLookingUpProduct ? (
+        <p className="text-sm text-gray-500" role="status">
+          Checking item code...
+        </p>
+      ) : !isExpress ? (
         <>
           <div>
-            <label className="text-sm font-medium">Name</label>
+            <label
+              className="text-sm font-medium"
+              htmlFor="receipt-product-name"
+            >
+              Product name
+            </label>
             <input
-              {...register("name", { required: true })}
-              className="w-full border px-3 py-2 rounded mt-1"
+              id="receipt-product-name"
+              {...register("name", {
+                minLength: {
+                  value: 5,
+                  message: "Name must be at least 5 characters",
+                },
+                maxLength: {
+                  value: 50,
+                  message: "Name cannot exceed 50 characters",
+                },
+              })}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
               placeholder="Product name"
             />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+            )}
           </div>
           <div>
-            <label className="text-sm font-medium">Unit</label>
+            <label
+              className="text-sm font-medium"
+              htmlFor="receipt-product-unit"
+            >
+              Unit
+            </label>
             <input
-              {...register("unit", { required: true })}
-              className="w-full border px-3 py-2 rounded mt-1"
+              id="receipt-product-unit"
+              {...register("unit", {
+                minLength: { value: 1, message: "Unit is required" },
+                maxLength: {
+                  value: 20,
+                  message: "Unit cannot exceed 20 characters",
+                },
+              })}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
               placeholder="e.g. pcs, bags"
             />
+            {errors.unit && (
+              <p className="mt-1 text-sm text-red-600">{errors.unit.message}</p>
+            )}
           </div>
         </>
-      )}
+      ) : null}
 
       <div>
-        <label className="text-sm font-medium">Quantity Received</label>
+        <label className="text-sm font-medium" htmlFor="receipt-quantity">
+          Quantity received
+        </label>
         <input
+          id="receipt-quantity"
           type="number"
+          min={1}
+          step="any"
           {...register("quantity", {
-            required: true,
-            min: 1,
             valueAsNumber: true,
+            required: "Quantity is required",
+            validate: (value) =>
+              (Number.isFinite(value) && value >= 1) ||
+              "Quantity must be at least 1",
           })}
-          className="w-full border px-3 py-2 rounded mt-1"
+          className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
           placeholder="e.g. 100"
         />
+        {errors.quantity && (
+          <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
         <input
+          id="receipt-is-express"
           type="checkbox"
           {...register("isExpress")}
-          className="accent-blue-600"
+          className="size-4 accent-blue-700"
         />
-        <label className="text-sm font-medium">
-          Express Delivery (skip stock)
+        <label htmlFor="receipt-is-express" className="text-sm font-medium">
+          Express delivery (does not add stock)
         </label>
       </div>
 
       {isExpress && (
         <>
           <div>
-            <label className="text-sm font-medium">Client Name</label>
+            <label className="text-sm font-medium" htmlFor="receipt-client">
+              Client name
+            </label>
             <input
-              {...register("client", { required: true })}
-              className="w-full border px-3 py-2 rounded mt-1"
+              id="receipt-client"
+              {...register("client", {
+                required: "Client name is required",
+                maxLength: {
+                  value: 100,
+                  message: "Client name cannot exceed 100 characters",
+                },
+              })}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
               placeholder="e.g. Ali & Sons Paints"
             />
+            {errors.client && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.client.message}
+              </p>
+            )}
           </div>
           <div>
-            <label className="text-sm font-medium">Delivery Note</label>
+            <label
+              className="text-sm font-medium"
+              htmlFor="receipt-delivery-note"
+            >
+              Delivery note
+            </label>
             <input
-              {...register("deliveryNote", { required: false })}
-              className="w-full border px-3 py-2 rounded mt-1"
+              id="receipt-delivery-note"
+              {...register("deliveryNote", {
+                maxLength: {
+                  value: 200,
+                  message: "Delivery note cannot exceed 200 characters",
+                },
+              })}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
               placeholder="e.g. DN-0423"
             />
+            {errors.deliveryNote && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.deliveryNote.message}
+              </p>
+            )}
           </div>
         </>
       )}
 
+      {submitError && (
+        <p className="text-sm text-red-600" role="alert">
+          {submitError}
+        </p>
+      )}
+
       <button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        disabled={isSubmitting || isLookingUpProduct}
+        className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Save
+        {isSubmitting
+          ? "Saving..."
+          : isExpress
+            ? "Log express delivery"
+            : "Receive stock"}
       </button>
     </form>
   );

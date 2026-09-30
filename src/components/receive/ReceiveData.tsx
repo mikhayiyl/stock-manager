@@ -31,38 +31,40 @@ export function ReceiveData({ highlightId }: { highlightId: string | null }) {
   const hasLoaded = !loadingProducts && !loadingReceipts;
   const isEmpty = hasLoaded && receipts.length === 0;
 
-  const today = new Date().toISOString().slice(0, 10);
-  const skipDateFilter =
-    debouncedFilters.startDate === today && debouncedFilters.endDate === today;
+  const productsByCode = new Map(
+    products.map((product) => [product.itemCode, product]),
+  );
 
   const filteredReceipts = receipts
     .filter((r) => !r.isExpress)
     .filter((r) => {
-      const p = products.find((p) => p.itemCode === r.itemCode);
-      const date = new Date(r.date);
+      const product = productsByCode.get(r.itemCode);
+      const receiptDate = new Date(r.date);
       const start = debouncedFilters.startDate
-        ? new Date(debouncedFilters.startDate)
+        ? new Date(`${debouncedFilters.startDate}T00:00:00`)
         : null;
       const end = debouncedFilters.endDate
-        ? new Date(debouncedFilters.endDate + "T23:59:59")
+        ? new Date(`${debouncedFilters.endDate}T23:59:59.999`)
         : null;
 
       return (
-        (skipDateFilter || !start || date >= start) &&
-        (skipDateFilter || !end || date <= end) &&
+        (!start || receiptDate >= start) &&
+        (!end || receiptDate <= end) &&
         (!debouncedFilters.itemCode ||
           r.itemCode
             .toLowerCase()
             .includes(debouncedFilters.itemCode.toLowerCase())) &&
         (!debouncedFilters.name ||
-          p?.name?.toLowerCase().includes(debouncedFilters.name.toLowerCase()))
+          product?.name
+            ?.toLowerCase()
+            .includes(debouncedFilters.name.toLowerCase()))
       );
     });
 
   const itemsPerPage = 10;
   const paginatedReceipts = filteredReceipts.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   if (isLoading) {
@@ -74,16 +76,20 @@ export function ReceiveData({ highlightId }: { highlightId: string | null }) {
   }
 
   return (
-    <div className="bg-white p-4 rounded shadow overflow-x-auto">
-      <h3 className="text-lg font-semibold mb-4">Recent Arrivals</h3>
+    <section className="min-w-0 space-y-4 overflow-x-auto rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+      <h3 className="text-lg font-semibold text-gray-900">Stock receipts</h3>
 
       <ProductFilters filters={filters} onChange={setFilters} />
 
-      <DataTable
-        receipts={paginatedReceipts}
-        products={products}
-        highlightId={highlightId}
-      />
+      {filteredReceipts.length > 0 ? (
+        <DataTable
+          receipts={paginatedReceipts}
+          products={products}
+          highlightId={highlightId}
+        />
+      ) : (
+        <EmptyState message="No stock receipts match these filters." />
+      )}
 
       <Pagination
         totalItems={filteredReceipts.length}
@@ -91,6 +97,6 @@ export function ReceiveData({ highlightId }: { highlightId: string | null }) {
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
       />
-    </div>
+    </section>
   );
 }

@@ -17,29 +17,33 @@ export function ProductFilters({ filters, onChange }: FilterProps) {
     <div className="mb-4 flex flex-wrap gap-4">
       <input
         type="date"
+        aria-label="Start date"
         value={filters.startDate}
         onChange={(e) => update("startDate", e.target.value)}
-        className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
+        className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-black sm:w-auto"
       />
       <input
         type="date"
+        aria-label="End date"
         value={filters.endDate}
         onChange={(e) => update("endDate", e.target.value)}
-        className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
+        className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-black sm:w-auto"
       />
       <input
         type="text"
+        aria-label="Filter by item code"
         placeholder="Item Code"
         value={filters.itemCode}
         onChange={(e) => update("itemCode", e.target.value)}
-        className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
+        className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-black sm:w-auto"
       />
       <input
         type="text"
+        aria-label="Filter by product name"
         placeholder="Name"
         value={filters.name}
         onChange={(e) => update("name", e.target.value)}
-        className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
+        className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-black sm:w-auto"
       />
     </div>
   );

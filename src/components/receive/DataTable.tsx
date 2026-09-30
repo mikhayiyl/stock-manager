@@ -9,14 +9,18 @@ type Props = {
 };
 
 export function DataTable({ receipts, products, highlightId }: Props) {
+  const productsByCode = new Map(
+    products.map((product) => [product.itemCode, product]),
+  );
+
   return (
-    <table className="min-w-full text-sm">
+    <table className="w-full min-w-[640px] text-sm">
       <thead className="bg-gray-100 text-left">
         <tr>
           <th className="p-2">Item Code</th>
           <th className="p-2">Name</th>
           <th className="p-2">Quantity</th>
-          <th className="p-2">Stock</th>
+          <th className="p-2">Current stock</th>
           <th className="p-2">Unit</th>
           <th className="p-2">Date</th>
         </tr>
@@ -24,7 +28,7 @@ export function DataTable({ receipts, products, highlightId }: Props) {
 
       <tbody>
         {receipts.map((receipt) => {
-          const product = products.find((p) => p.itemCode === receipt.itemCode);
+          const product = productsByCode.get(receipt.itemCode);
 
           return (
             <tr
@@ -39,11 +43,18 @@ export function DataTable({ receipts, products, highlightId }: Props) {
                 </Link>
               </td>
               <td className="p-2">{product?.name ?? "—"}</td>
-              <td className="p-2">{receipt.quantity}</td>
-              <td className="p-2">{product?.numberInStock ?? "—"}</td>
+              <td className="p-2 tabular-nums">
+                {receipt.quantity.toLocaleString()}
+              </td>
+              <td className="p-2 tabular-nums">
+                {product?.numberInStock.toLocaleString() ?? "—"}
+              </td>
               <td className="p-2">{product?.unit ?? "—"}</td>
               <td className="p-2">
-                {new Date(receipt.date).toLocaleDateString()}
+                {new Date(receipt.date).toLocaleString("en-GB", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
               </td>
             </tr>
           );
