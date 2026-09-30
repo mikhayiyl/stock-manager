@@ -16,12 +16,14 @@ const Filters = ({ filters, setFilters }: Props) => {
   return (
     <div className="flex flex-wrap gap-4">
       <input
+        aria-label="Filter by item code"
         placeholder="Item Code"
         value={filters.itemCode}
         onChange={(e) => setFilters({ ...filters, itemCode: e.target.value })}
         className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
       />
       <input
+        aria-label="Filter by product name"
         placeholder="Product Name"
         value={filters.name}
         onChange={(e) => setFilters({ ...filters, name: e.target.value })}
@@ -29,12 +31,14 @@ const Filters = ({ filters, setFilters }: Props) => {
       />
       <input
         type="date"
+        aria-label="Start date"
         value={filters.startDate}
         onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
         className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"
       />
       <input
         type="date"
+        aria-label="End date"
         value={filters.endDate}
         onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
         className="border px-3 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white"

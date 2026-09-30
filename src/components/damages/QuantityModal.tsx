@@ -3,8 +3,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import getAuthUser from "@/lib/auth";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+} from "@radix-ui/react-dialog";
 
-export const quantitySchema = z.object({
+const quantitySchema = z.object({
   quantity: z
     .number({ required_error: "Quantity is required" })
     .min(1, "Minimum quantity is 1"),
@@ -18,17 +26,19 @@ export function QuantityModal({
   onClose,
   onSubmit,
   max,
+  actionType,
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (quantity: number, notes: string) => void;
+  onSubmit: (quantity: number, notes: string) => Promise<boolean>;
   max: number;
+  actionType: "resolved" | "disposed";
 }) {
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     watch,
   } = useForm<QuantityFormValues>({
     resolver: zodResolver(quantitySchema),
@@ -40,69 +50,116 @@ export function QuantityModal({
 
   const quantity = watch("quantity");
 
-  const internalSubmit = (data: QuantityFormValues) => {
+  const internalSubmit = async (data: QuantityFormValues) => {
     if (!getAuthUser()?.isAdmin)
-      return toast.error("access denied. you are not an admin!");
+      return toast.error("Access denied. Administrator access is required.");
     if (data.quantity > max) return;
-    onSubmit(data.quantity, data.notes ?? "");
+    const succeeded = await onSubmit(data.quantity, data.notes ?? "");
+    if (succeeded === false) return;
     reset();
     onClose();
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-white/30 via-white/10 to-transparent pointer-events-none">
-      <div className="bg-white p-4 rounded-lg border border-gray-300 shadow-lg w-80 space-y-4 pointer-events-auto transform scale-95 animate-fadeIn">
-        <h2 className="text-lg font-semibold">Set Quantity</h2>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && !isSubmitting) onClose();
+      }}
+    >
+      <DialogPortal>
+        <DialogOverlay className="fixed inset-0 z-50 bg-black/40" />
+        <DialogContent
+          onPointerDownOutside={(event) => event.preventDefault()}
+          onInteractOutside={(event) => event.preventDefault()}
+          className="fixed left-1/2 top-1/2 z-50 max-h-[90dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-md border border-gray-200 bg-white p-5 shadow-xl"
+        >
+          <DialogTitle className="text-lg font-semibold text-gray-900">
+            {actionType === "resolved"
+              ? "Resolve damaged stock"
+              : "Dispose damaged stock"}
+          </DialogTitle>
+          <DialogDescription className="mt-1 text-sm text-gray-600">
+            {actionType === "resolved"
+              ? "Resolved units will be added back to available stock."
+              : "Disposed units will remain removed from available stock."}{" "}
+            Maximum: {max}.
+          </DialogDescription>
 
-        <form onSubmit={handleSubmit(internalSubmit)} className="space-y-4">
-          <div>
-            <input
-              type="number"
-              {...register("quantity", { valueAsNumber: true })}
-              min={1}
-              max={max}
-              className="border px-2 py-1 rounded w-full"
-            />
-            {errors.quantity && (
-              <p className="text-xs text-red-600 mt-1">
-                {errors.quantity.message}
-              </p>
-            )}
-            {quantity > max && (
-              <p className="text-xs text-red-500 mt-1">
-                Quantity exceeds available amount ({max})
-              </p>
-            )}
-          </div>
+          <form
+            onSubmit={handleSubmit(internalSubmit)}
+            className="mt-5 space-y-4"
+          >
+            <div>
+              <label
+                htmlFor="damage-resolution-quantity"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Quantity
+              </label>
+              <input
+                id="damage-resolution-quantity"
+                type="number"
+                {...register("quantity", { valueAsNumber: true })}
+                min={1}
+                max={max}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+              />
+              {errors.quantity && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.quantity.message}
+                </p>
+              )}
+              {quantity > max && (
+                <p className="mt-1 text-sm text-red-600" role="alert">
+                  Quantity exceeds the remaining amount ({max}).
+                </p>
+              )}
+            </div>
 
-          <textarea
-            placeholder="Optional notes"
-            {...register("notes")}
-            className="border px-2 py-1 rounded w-full text-sm"
-          />
+            <div>
+              <label
+                htmlFor="damage-resolution-notes"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Notes (optional)
+              </label>
+              <textarea
+                id="damage-resolution-notes"
+                placeholder="Add a note"
+                {...register("notes")}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                rows={3}
+              />
+            </div>
 
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                reset();
-                onClose();
-              }}
-              className="px-2 py-0.5 text-xs rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-2 py-0.5 text-xs rounded-full bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Submit
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => {
+                  reset();
+                  onClose();
+                }}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || quantity > max}
+                className="rounded-md bg-blue-700 px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSubmitting
+                  ? "Saving..."
+                  : actionType === "resolved"
+                    ? "Confirm resolution"
+                    : "Confirm disposal"}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   );
 }

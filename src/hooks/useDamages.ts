@@ -5,21 +5,27 @@ import { useEffect, useState } from "react";
 
 const useDamages = () => {
   const [damages, setDamages] = useState<Damage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetch = () => {
+    setIsLoading(true);
+    setError(null);
     const { request, cancel } = damageClient.getAll<Damage>();
     request
       .then((res) => setDamages(res.data))
       .catch((err) => {
         if (err instanceof CanceledError) return;
         console.error("Fetch error:", err);
-      });
+        setError("Could not load damage reports.");
+      })
+      .finally(() => setIsLoading(false));
     return cancel;
   };
 
   useEffect(() => fetch(), []);
 
-  return { damages, refresh: fetch };
+  return { damages, isLoading, error, refresh: fetch };
 };
 
 export default useDamages;

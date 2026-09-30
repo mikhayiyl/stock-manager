@@ -2,16 +2,21 @@ import DamageCard from "@/components/damages/DamageCard";
 import Filters from "@/components/damages/Filters";
 import { QuantityModal } from "@/components/damages/QuantityModal";
 import Pagination from "@/components/PaginationBar";
+import { EmptyState } from "@/components/EmptyState";
+import { SkeletonBlock } from "@/components/SkeletonBlock";
 import useDamages from "@/hooks/useDamages";
 import { useDebounce } from "@/hooks/useDebounce";
 import useProducts from "@/hooks/useProducts";
 import damageClient from "@/services/damage-client";
 import type { Damage } from "@/types/Damage";
+import { isAxiosError } from "axios";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function DamagePage() {
-  const { damages, refresh } = useDamages();
-  const { products } = useProducts();
+  const { damages, isLoading: damagesLoading, error, refresh } = useDamages();
+  const { products, isLoading: productsLoading } = useProducts();
+  const isLoading = damagesLoading || productsLoading;
 
   const [filters, setFilters] = useState({
     itemCode: "",
@@ -32,51 +37,75 @@ export default function DamagePage() {
     setCurrentPage(1);
   }, [debouncedFilters]);
 
-  const filteredDamages = damages.filter((d) => {
-    const matchingProduct = products.find(
-      (p) => p.itemCode.toLowerCase() === d.itemCode.toLowerCase()
-    );
+  const productsByCode = new Map(
+    products.map((product) => [product.itemCode.toLowerCase(), product]),
+  );
+  const invalidDateRange =
+    Boolean(debouncedFilters.startDate && debouncedFilters.endDate) &&
+    debouncedFilters.startDate > debouncedFilters.endDate;
 
-    const matchesItemCode = debouncedFilters.itemCode
-      ? d.itemCode
-          .toLowerCase()
-          .includes(debouncedFilters.itemCode.toLowerCase())
-      : true;
+  const filteredDamages = invalidDateRange
+    ? []
+    : damages.filter((damage) => {
+        const matchingProduct = productsByCode.get(
+          damage.itemCode.toLowerCase(),
+        );
 
-    const matchesName = debouncedFilters.name
-      ? matchingProduct?.name
-          ?.toLowerCase()
-          .includes(debouncedFilters.name.toLowerCase())
-      : true;
+        const matchesItemCode = debouncedFilters.itemCode
+          ? damage.itemCode
+              .toLowerCase()
+              .includes(debouncedFilters.itemCode.toLowerCase())
+          : true;
 
-    const damageDate = new Date(d.date);
-    const matchesStartDate = debouncedFilters.startDate
-      ? damageDate >= new Date(debouncedFilters.startDate)
-      : true;
+        const matchesName = debouncedFilters.name
+          ? matchingProduct?.name
+              ?.toLowerCase()
+              .includes(debouncedFilters.name.toLowerCase())
+          : true;
 
-    const matchesEndDate = debouncedFilters.endDate
-      ? damageDate <= new Date(debouncedFilters.endDate + "T23:59:59")
-      : true;
+        const damageDate = new Date(damage.date).getTime();
+        const matchesStartDate = debouncedFilters.startDate
+          ? damageDate >=
+            new Date(`${debouncedFilters.startDate}T00:00:00`).getTime()
+          : true;
 
-    return matchesItemCode && matchesName && matchesStartDate && matchesEndDate;
-  });
+        const matchesEndDate = debouncedFilters.endDate
+          ? damageDate <=
+            new Date(`${debouncedFilters.endDate}T23:59:59.999`).getTime()
+          : true;
+
+        return (
+          matchesItemCode && matchesName && matchesStartDate && matchesEndDate
+        );
+      });
 
   const handleResolve = async (
     id: string,
     type: "resolved" | "disposed",
     quantity: number,
-    notes?: string
-  ) => {
+    notes?: string,
+  ): Promise<boolean> => {
     try {
-      await damageClient.patch(`/resolve/${id}`, {
+      await damageClient.patch(`resolve/${id}`, {
         type,
         quantity,
         notes,
       });
       refresh();
       window.dispatchEvent(new Event("products:refresh"));
+      toast.success(
+        type === "resolved" ? "Damage resolved." : "Damage disposed.",
+      );
+      return true;
     } catch (err) {
       console.error("Failed to resolve damage:", err);
+      const responseData = isAxiosError(err) ? err.response?.data : null;
+      toast.error(
+        typeof responseData === "string"
+          ? responseData
+          : "Could not update this damage report. Try again.",
+      );
+      return false;
     }
   };
 
@@ -91,39 +120,71 @@ export default function DamagePage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedDamages = filteredDamages.slice(
     startIndex,
-    startIndex + itemsPerPage
+    startIndex + itemsPerPage,
   );
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Damage Reports</h1>
-      {/* Filters */}
+    <div className="min-w-0 space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Damage reports</h1>
+      {invalidDateRange && (
+        <p className="text-sm text-red-700" role="alert">
+          The start date must be on or before the end date.
+        </p>
+      )}
       <Filters filters={filters} setFilters={setFilters} />
-      {/* Damage Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pt-4">
-        {paginatedDamages.map((d) => {
-          const product = products.find((p) => p.itemCode === d.itemCode);
-          return (
+
+      {isLoading ? (
+        <SkeletonBlock
+          variant="card"
+          rows={6}
+          title="Loading damage reports..."
+        />
+      ) : error ? (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={refresh}
+            className="font-medium underline underline-offset-2"
+          >
+            Retry
+          </button>
+        </section>
+      ) : filteredDamages.length === 0 ? (
+        <EmptyState
+          message={
+            damages.length === 0
+              ? "No damage reports yet."
+              : "No damage reports match these filters."
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {paginatedDamages.map((damage) => (
             <DamageCard
-              key={d._id}
-              damage={d}
-              product={product}
-              onResolve={(damage, type) => {
-                setSelectedDamage(damage);
+              key={damage._id}
+              damage={damage}
+              product={productsByCode.get(damage.itemCode.toLowerCase())}
+              onResolve={(item, type) => {
+                setSelectedDamage(item);
                 setResolutionType(type);
               }}
             />
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
+
       <QuantityModal
         open={!!selectedDamage}
         max={maxQuantity}
-        onClose={() => setSelectedDamage(null)}
-        onSubmit={(qty, notes) => {
-          if (selectedDamage && resolutionType) {
-            handleResolve(selectedDamage._id, resolutionType, qty, notes);
-          }
+        actionType={resolutionType ?? "resolved"}
+        onClose={() => {
+          setSelectedDamage(null);
+          setResolutionType(null);
+        }}
+        onSubmit={async (qty, notes) => {
+          if (!selectedDamage || !resolutionType) return false;
+          return handleResolve(selectedDamage._id, resolutionType, qty, notes);
         }}
       />
       <Pagination
