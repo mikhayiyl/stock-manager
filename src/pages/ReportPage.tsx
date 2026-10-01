@@ -4,14 +4,16 @@ import { useState } from "react";
 
 export default function ReportPage() {
   const now = new Date();
-
-  const firstDay = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    1
-  ).toLocaleDateString("sv-SE"); // gives YYYY-MM-DD format in local time
-
-  const today = new Date().toISOString().slice(0, 10); // returns today’s date
+  const toDateInputValue = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+  const firstDay = toDateInputValue(
+    new Date(now.getFullYear(), now.getMonth(), 1),
+  );
+  const today = toDateInputValue(now);
 
   const [filter, setFilter] = useState<{
     from: string;
@@ -25,7 +27,9 @@ export default function ReportPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Stock Movement Report</h2>
+      <h2 className="text-2xl font-bold text-gray-900">
+        Stock movement report
+      </h2>
       <ReportFilter
         onFilterChange={setFilter}
         dateFilter={{ firstDay, today }}

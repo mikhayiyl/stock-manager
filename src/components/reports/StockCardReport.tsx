@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
-import type { Product } from "@/types/Product";
 import { saveAs } from "file-saver";
+import pdfMake from "pdfmake/build/pdfmake";
+import * as pdfFonts from "pdfmake/build/vfs_fonts";
+import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
+import type { GroupedEntry } from "@/types/Entry";
 import useProducts from "@/hooks/useProducts";
 import useOrders from "@/hooks/useOrders";
 import useReceipts from "@/hooks/useReceipts";
+import useDamages from "@/hooks/useDamages";
+import { calculateStockMetrics } from "@/hooks/useStockMetrics";
 import { ReportActions } from "./ReportActions";
 import { StockCard } from "./StockCard";
-import pdfMake from "pdfmake/build/pdfmake";
-import * as pdfFonts from "pdfmake/build/vfs_fonts";
-import type { GroupedEntry } from "@/types/Entry";
 import Pagination from "../PaginationBar";
-import useDamages from "@/hooks/useDamages";
-import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
-import { useStockMetrics } from "@/hooks/useStockMetrics";
+import { EmptyState } from "@/components/EmptyState";
+import { SkeletonBlock } from "@/components/SkeletonBlock";
 
 pdfMake.vfs = pdfFonts.vfs;
 
@@ -20,325 +21,374 @@ type Props = {
   filter: { from: string; to: string; search: string };
 };
 
+type ReportItem = {
+  itemCode: string;
+  entry: GroupedEntry;
+  metrics: ReturnType<typeof calculateStockMetrics>;
+};
+
+const csvCell = (value: string | number) => {
+  const text = String(value);
+  const safeText =
+    typeof value === "string" && /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+};
+
+const formatDate = (date: string) => {
+  const parsed = new Date(date);
+  return Number.isNaN(parsed.getTime())
+    ? "Invalid date"
+    : parsed.toLocaleString("en-GB", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+};
+
 export function StockCardReport({ filter }: Props) {
-  const [grouped, setGrouped] = useState<Map<string, GroupedEntry>>(new Map());
-  const [products, setProducts] = useState<Product[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
+  const { receipts, isLoading: receiptsLoading } = useReceipts();
+  const { orders, isLoading: ordersLoading } = useOrders();
+  const {
+    damages,
+    isLoading: damagesLoading,
+    error: damagesError,
+    refresh: refreshDamages,
+  } = useDamages();
+  const { products, isLoading: productsLoading } = useProducts();
+  const isLoading =
+    receiptsLoading || ordersLoading || damagesLoading || productsLoading;
+  const invalidDateRange =
+    Boolean(filter.from && filter.to) && filter.from > filter.to;
 
-  const { receipts } = useReceipts();
-  const { orders } = useOrders();
-  const { damages } = useDamages();
+  const allEntries = new Map<string, GroupedEntry>();
+  const getEntry = (itemCode: string) => {
+    let entry = allEntries.get(itemCode);
+    if (!entry) {
+      entry = { receipts: [], orders: [], damages: [] };
+      allEntries.set(itemCode, entry);
+    }
+    return entry;
+  };
 
-  const { products: productsRes } = useProducts();
+  receipts.forEach((receipt) =>
+    getEntry(receipt.itemCode).receipts.push(receipt),
+  );
+  orders.forEach((order) => getEntry(order.itemCode).orders.push(order));
+  damages.forEach((damage) => getEntry(damage.itemCode).damages.push(damage));
 
-  const isFilterActive = () =>
-    filter.from.trim() !== "" ||
-    filter.to.trim() !== "" ||
-    filter.search.trim() !== "";
+  const productsByCode = new Map(
+    products.map((product) => [product.itemCode.toLowerCase(), product]),
+  );
+  const search = filter.search.trim().toLowerCase();
+  const reportItems: ReportItem[] = invalidDateRange
+    ? []
+    : Array.from(allEntries.entries())
+        .map(([itemCode, entry]) => ({
+          itemCode,
+          entry,
+          metrics: calculateStockMetrics(
+            itemCode,
+            entry,
+            productsByCode.get(itemCode.toLowerCase()),
+            filter,
+          ),
+        }))
+        .filter(({ itemCode, metrics }) => {
+          const productName =
+            productsByCode.get(itemCode.toLowerCase())?.name.toLowerCase() ??
+            "";
+          return (
+            metrics.movements.length > 0 &&
+            (!search ||
+              itemCode.toLowerCase().includes(search) ||
+              productName.includes(search))
+          );
+        })
+        .sort((left, right) =>
+          left.metrics.name.localeCompare(right.metrics.name),
+        );
 
-  const getEntriesToExport = () =>
-    isFilterActive()
-      ? filteredEntries
-      : Array.from(grouped.entries()).slice(0, 20);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter.from, filter.to, filter.search]);
 
   const handleExportCSV = () => {
-    const entriesToExport = getEntriesToExport();
-    const rows: string[] = ["Item Code,Item Name,Type,Quantity,Date"];
+    const rows: (string | number)[][] = [
+      [
+        "Item Code",
+        "Product",
+        "Unit",
+        "Activity",
+        "Quantity",
+        "Stock Change",
+        "Balance After",
+        "Unmatched Outbound",
+        "Date",
+        "Notes",
+      ],
+    ];
 
-    entriesToExport.forEach(([itemCode, entry]) => {
-      const product = products.find((p) => p.itemCode === itemCode);
-      const metrics = useStockMetrics(
+    reportItems.forEach(({ itemCode, metrics }) => {
+      metrics.movements.forEach((movement) => {
+        rows.push([
+          itemCode,
+          metrics.name,
+          metrics.unit,
+          movement.type,
+          movement.quantity,
+          movement.stockChange,
+          movement.balanceAfter,
+          movement.unmatchedOutbound,
+          formatDate(movement.date),
+          movement.notes,
+        ]);
+      });
+      rows.push([
         itemCode,
-        { damages, receipts: entry.receipts, orders: entry.orders },
-        product
-      );
-
-      entry.receipts.forEach((r) => {
-        rows.push(
-          `${itemCode},${metrics.name},${
-            r.isExpress ? "Received (Express)" : "Received"
-          },${r.quantity},${new Date(r.date).toLocaleDateString()}`
-        );
-      });
-
-      entry.orders.forEach((o) => {
-        rows.push(
-          `${itemCode},${metrics.name},Order,-${o.quantity},${new Date(
-            o.date
-          ).toLocaleDateString()}`
-        );
-      });
-
-      entry.damages.forEach((d) => {
-        const disposed =
-          d.resolutionHistory?.filter((r) => r.type === "disposed") ?? [];
-        disposed.forEach((r) => {
-          rows.push(
-            `${itemCode},${metrics.name},Disposed,-${r.quantity},${new Date(
-              d.date
-            ).toLocaleDateString()}`
-          );
-        });
-      });
-
-      rows.push(`${itemCode},${metrics.name},-- Totals --,,`);
-      rows.push(
-        `${itemCode},${metrics.name},Opening Balance,${metrics.previousBalance},`
-      );
-      rows.push(
-        `${itemCode},${metrics.name},Movement Total,${metrics.movementTotal}${metrics.unit},`
-      );
-      rows.push(
-        `${itemCode},${metrics.name},Current Stock,${metrics.currentStock} ${metrics.unit},`
-      );
-      rows.push("");
+        metrics.name,
+        metrics.unit,
+        "Opening balance",
+        metrics.previousBalance,
+        "",
+        metrics.previousBalance,
+        "",
+        "",
+        "",
+      ]);
+      rows.push([
+        itemCode,
+        metrics.name,
+        metrics.unit,
+        "Net stock change",
+        metrics.movementTotal,
+        "",
+        metrics.closingBalance,
+        "",
+        "",
+        "",
+      ]);
+      rows.push([
+        itemCode,
+        metrics.name,
+        metrics.unit,
+        "Unmatched outbound",
+        metrics.unmatchedOutbound,
+        "",
+        "",
+        "",
+        "",
+        "",
+      ]);
+      rows.push([
+        itemCode,
+        metrics.name,
+        metrics.unit,
+        "Closing balance",
+        metrics.closingBalance,
+        "",
+        metrics.closingBalance,
+        "",
+        "",
+        "",
+      ]);
+      rows.push([
+        itemCode,
+        metrics.name,
+        metrics.unit,
+        "Current stock now",
+        metrics.currentStock,
+        "",
+        "",
+        "",
+        "",
+        "",
+      ]);
+      rows.push([]);
     });
 
-    const blob = new Blob([rows.join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-    saveAs(blob, `stock_report_${Date.now()}.csv`);
+    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+    saveAs(
+      new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" }),
+      `stock_movement_${Date.now()}.csv`,
+    );
   };
 
   const handleExportPDF = () => {
-    const entriesToExport = getEntriesToExport();
+    const content: Content[] = [
+      { text: "Stock Movement Report", style: "header" },
+      {
+        text: `Date range: ${filter.from || "All dates"} to ${filter.to || "All dates"}`,
+        margin: [0, 0, 0, 10],
+      },
+    ];
 
-    const contentBlocks: Content[] = [];
+    reportItems.forEach(({ itemCode, metrics }) => {
+      const body: string[][] = [
+        [
+          "Activity",
+          "Quantity",
+          "Stock change",
+          "Balance after",
+          "Unmatched outbound",
+          "Date",
+          "Notes",
+        ],
+        ...metrics.movements.map((movement) => [
+          movement.type,
+          `${movement.quantity} ${metrics.unit}`,
+          movement.stockChange === 0
+            ? "—"
+            : `${movement.stockChange > 0 ? "+" : ""}${movement.stockChange} ${metrics.unit}`,
+          `${movement.balanceAfter} ${metrics.unit}`,
+          movement.unmatchedOutbound > 0
+            ? `${movement.unmatchedOutbound} ${metrics.unit}`
+            : "—",
+          formatDate(movement.date),
+          movement.notes || "—",
+        ]),
+        [
+          "Opening balance",
+          `${metrics.previousBalance} ${metrics.unit}`,
+          "",
+          `${metrics.previousBalance} ${metrics.unit}`,
+          "",
+          "",
+          "",
+        ],
+        [
+          "Net stock change",
+          `${metrics.movementTotal} ${metrics.unit}`,
+          "",
+          `${metrics.closingBalance} ${metrics.unit}`,
+          "",
+          "",
+          "",
+        ],
+        [
+          "Unmatched outbound",
+          `${metrics.unmatchedOutbound} ${metrics.unit}`,
+          "",
+          "",
+          `${metrics.unmatchedOutbound} ${metrics.unit}`,
+          "",
+          "",
+        ],
+        [
+          "Closing balance",
+          `${metrics.closingBalance} ${metrics.unit}`,
+          "",
+          `${metrics.closingBalance} ${metrics.unit}`,
+          "",
+          "",
+          "",
+        ],
+        [
+          "Current stock now",
+          `${metrics.currentStock} ${metrics.unit}`,
+          "",
+          "",
+          "",
+          "",
+          "",
+        ],
+      ];
 
-    entriesToExport.forEach(([itemCode, entry]) => {
-      const product = products.find((p) => p.itemCode === itemCode);
-      if (!product) return;
-
-      const name = product.name ?? itemCode;
-      const unit = product.unit ?? "";
-      const currentStock = product.numberInStock ?? 0;
-
-      const totalReceived = entry.receipts.reduce(
-        (sum, r) => sum + r.quantity,
-        0
-      );
-      const totalOrdered = entry.orders.reduce((sum, o) => sum + o.quantity, 0);
-      const totalDisposed = entry.damages.reduce((sum, d) => {
-        if (!Array.isArray(d.resolutionHistory)) return sum;
-        return (
-          sum +
-          d.resolutionHistory
-            .filter((r) => r.type === "disposed")
-            .reduce((s, r) => s + r.quantity, 0)
-        );
-      }, 0);
-
-      const previousBalance =
-        currentStock - totalReceived + totalOrdered + totalDisposed;
-      const movementTotal =
-        previousBalance + totalReceived - totalOrdered - totalDisposed;
-
-      const rows: any[] = [];
-      rows.push(["Type", "Quantity", "Date"]);
-
-      entry.receipts.forEach((r) => {
-        rows.push([
-          r.isExpress ? "Received (Express)" : "Received",
-          r.quantity,
-          new Date(r.date).toLocaleDateString(),
-        ]);
-      });
-
-      entry.orders.forEach((o) => {
-        rows.push([
-          "Order",
-          -o.quantity,
-          new Date(o.date).toLocaleDateString(),
-        ]);
-      });
-
-      entry.damages.forEach((d) => {
-        const disposed =
-          d.resolutionHistory?.filter((r) => r.type === "disposed") ?? [];
-        disposed.forEach((r) => {
-          rows.push([
-            "Disposed",
-            -r.quantity,
-            new Date(d.date).toLocaleDateString(),
-          ]);
-        });
-      });
-
-      rows.push([
-        {
-          text: "— Totals —",
-          colSpan: 3,
-          alignment: "center",
-          margin: [0, 10, 0, 4],
-          bold: true,
-        },
-        {},
-        {},
-      ]);
-      rows.push(["Opening Balance", previousBalance, ""]);
-      rows.push(["Movement Total", movementTotal, ""]);
-      rows.push(["Current Stock Balance", `${currentStock} ${unit}`, ""]);
-
-      contentBlocks.push({
-        text: `${name} (${itemCode})`,
+      content.push({
+        text: `${metrics.name} (${itemCode})`,
         style: "subheader",
-        pageBreak: "before",
-        margin: [0, 10, 0, 4],
+        margin: [0, 12, 0, 5],
       });
-
-      contentBlocks.push({
+      content.push({
         table: {
           headerRows: 1,
-          widths: ["*", "auto", "auto"],
-          body: rows,
+          widths: ["*", "auto", "auto", "auto", "auto", "auto", "*"],
+          body,
         },
         layout: "lightHorizontalLines",
       });
     });
 
-    const docDefinition: TDocumentDefinitions = {
-      content: [
-        { text: "Stock Movement Report", style: "header" },
-        ...contentBlocks,
-      ],
+    const definition: TDocumentDefinitions = {
+      pageOrientation: "landscape",
+      content,
       styles: {
-        header: {
-          fontSize: 18,
-          bold: true,
-          margin: [0, 0, 0, 10],
-        },
-        subheader: {
-          fontSize: 14,
-          bold: true,
-          margin: [0, 10, 0, 6],
-        },
+        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 8] },
+        subheader: { fontSize: 13, bold: true },
       },
     };
 
-    pdfMake.createPdf(docDefinition).download(`stock_report_${Date.now()}.pdf`);
+    pdfMake.createPdf(definition).download(`stock_movement_${Date.now()}.pdf`);
   };
 
-  useEffect(() => {
-    if (receipts.length === 0 && orders.length === 0) return;
-
-    const isInRange = (dateStr: string) => {
-      const entryTime = new Date(dateStr).getTime();
-      const fromTime = filter.from
-        ? new Date(filter.from + "T00:00:00").getTime()
-        : -Infinity;
-      const toTime = filter.to
-        ? new Date(filter.to + "T23:59:59").getTime()
-        : Infinity;
-      return entryTime >= fromTime && entryTime <= toTime;
-    };
-
-    const fetchData = async () => {
-      setLoading(true);
-      const groupedMap = new Map<string, GroupedEntry>();
-
-      const filteredDamages = isFilterActive()
-        ? damages.filter((d) => isInRange(d.date))
-        : [...damages]
-            .sort(
-              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-            )
-            .slice(0, 20);
-
-      filteredDamages.forEach((d) => {
-        if (!groupedMap.has(d.itemCode))
-          groupedMap.set(d.itemCode, { receipts: [], orders: [], damages: [] });
-        groupedMap.get(d.itemCode)!.damages.push(d);
-      });
-
-      const filteredReceipts = isFilterActive()
-        ? receipts.filter((r) => isInRange(r.date))
-        : [...receipts]
-            .sort(
-              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-            )
-            .slice(0, 20);
-
-      const filteredOrders = isFilterActive()
-        ? orders.filter((o) => isInRange(o.date))
-        : [...orders]
-            .sort(
-              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-            )
-            .slice(0, 20);
-
-      filteredReceipts.forEach((r) => {
-        if (!groupedMap.has(r.itemCode))
-          groupedMap.set(r.itemCode, { receipts: [], orders: [], damages: [] });
-        groupedMap.get(r.itemCode)!.receipts.push(r);
-      });
-
-      filteredOrders.forEach((o) => {
-        if (!groupedMap.has(o.itemCode))
-          groupedMap.set(o.itemCode, { receipts: [], orders: [], damages: [] });
-        groupedMap.get(o.itemCode)!.orders.push(o);
-      });
-
-      setGrouped(groupedMap);
-      setProducts(productsRes);
-      setCurrentPage(1);
-      setLoading(false);
-    };
-
-    fetchData();
-  }, [filter, receipts, orders]);
-
-  const filteredEntries = Array.from(grouped.entries()).filter(([itemCode]) => {
-    const product = products.find((p) => p.itemCode === itemCode);
-    const search = filter.search.toLowerCase();
+  if (isLoading) {
     return (
-      itemCode.toLowerCase().includes(search) ||
-      product?.name?.toLowerCase().includes(search)
+      <SkeletonBlock
+        variant="card"
+        rows={2}
+        title="Loading stock movement report..."
+      />
     );
-  });
-
-  const paginatedEntries = filteredEntries.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  if (loading) {
-    return <p className="text-center text-gray-500">Loading report...</p>;
   }
 
+  if (damagesError) {
+    return (
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <p>{damagesError}</p>
+        <button
+          type="button"
+          onClick={refreshDamages}
+          className="font-medium underline underline-offset-2"
+        >
+          Retry
+        </button>
+      </section>
+    );
+  }
+
+  if (invalidDateRange) {
+    return (
+      <EmptyState message="The start date must be on or before the end date." />
+    );
+  }
+
+  if (reportItems.length === 0) {
+    return <EmptyState message="No stock movements match these filters." />;
+  }
+
+  const paginatedItems = reportItems.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <ReportActions
+        disabled={reportItems.length === 0}
         onExportCSV={handleExportCSV}
         onExportPDF={handleExportPDF}
         onPrint={() => window.print()}
       />
-
-      {!isFilterActive() && grouped.size === 0 ? (
-        <p className="text-center text-gray-500">
-          Showing latest receipts. Apply filters to refine.
-        </p>
-      ) : paginatedEntries.length === 0 ? (
-        <p className="text-center text-gray-500">No entries found.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {paginatedEntries.map(([itemCode, { receipts, orders }]) => (
-            <StockCard
-              key={itemCode}
-              itemCode={itemCode}
-              receipts={receipts}
-              orders={orders}
-              damages={damages}
-              product={products.find((p) => p.itemCode === itemCode)}
-            />
-          ))}
-        </div>
-      )}
-
+      <p className="text-xs text-gray-500 no-print">
+        Exports include all {reportItems.length} products matching these
+        filters, across all pages.
+      </p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {paginatedItems.map(({ itemCode, entry }) => (
+          <StockCard
+            key={itemCode}
+            itemCode={itemCode}
+            receipts={entry.receipts}
+            orders={entry.orders}
+            damages={entry.damages}
+            product={productsByCode.get(itemCode.toLowerCase())}
+            range={filter}
+          />
+        ))}
+      </div>
       <Pagination
         currentPage={currentPage}
-        totalItems={filteredEntries.length}
+        totalItems={reportItems.length}
         onPageChange={setCurrentPage}
         itemsPerPage={itemsPerPage}
       />

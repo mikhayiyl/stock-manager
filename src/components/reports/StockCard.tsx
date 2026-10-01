@@ -1,8 +1,10 @@
 import type { Damage } from "@/types/Damage";
 import type { Entry } from "@/types/Entry";
 import type { Product } from "@/types/Product";
-import { SkeletonBlock } from "../SkeletonBlock";
-import { useStockMetrics } from "@/hooks/useStockMetrics";
+import {
+  calculateStockMetrics,
+  type StockReportRange,
+} from "@/hooks/useStockMetrics";
 
 type Props = {
   itemCode: string;
@@ -10,6 +12,7 @@ type Props = {
   orders: Entry[];
   damages: Damage[];
   product?: Product;
+  range: StockReportRange;
 };
 
 export function StockCard({
@@ -18,96 +21,145 @@ export function StockCard({
   orders,
   damages,
   product,
+  range,
 }: Props) {
-  if (!product) {
-    return <SkeletonBlock title="no product..." />;
-  }
-
   const {
     name,
     unit,
     currentStock,
     totalReceived,
+    totalExpress,
     totalOrdered,
+    totalDamaged,
+    totalRestored,
     totalDisposed,
     previousBalance,
     movementTotal,
-  } = useStockMetrics(itemCode, { receipts, orders, damages }, product);
+    movements,
+    closingBalance,
+    unmatchedOutbound,
+    hasReconciliationIssue,
+  } = calculateStockMetrics(
+    itemCode,
+    { receipts, orders, damages },
+    product,
+    range,
+  );
+
   return (
-    <div className="bg-white border border-gray-200 rounded-md shadow-sm p-4 mb-6 print-page hover:border-gray-300 transition">
-      {/* Header */}
-      <h4 className="text-lg font-semibold text-gray-800 mb-2">
+    <article className="min-w-0 space-y-4 rounded-md border border-gray-200 bg-white p-4 shadow-sm print-page">
+      <h3 className="break-words text-base font-semibold text-gray-900">
         {name}
-        <span className="text-sm text-gray-500 ml-1">({itemCode})</span>
-      </h4>
+        <span className="ml-2 font-mono text-xs font-normal text-gray-500">
+          {itemCode}
+        </span>
+      </h3>
 
-      {/* Grid layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm text-gray-700">
-        {/* Receipts */}
-        <div>
-          <p className="font-semibold text-gray-600 mb-1">Receipts</p>
-          <ul className="space-y-1">
-            {receipts.map((r) => (
-              <li key={r._id} className="flex items-center gap-2">
-                {r.quantity} on {new Date(r.date).toLocaleDateString()}
-                {r.isExpress && (
-                  <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 text-xs font-medium">
-                    EXPRESS
-                  </span>
-                )}
-              </li>
+      <dl className="grid grid-cols-2 gap-3 border-y border-gray-100 py-3 text-sm sm:grid-cols-4">
+        <Summary label="Opening balance" value={previousBalance} unit={unit} />
+        <Summary label="Net change" value={movementTotal} unit={unit} />
+        <Summary label="Closing balance" value={closingBalance} unit={unit} />
+        <Summary label="Current stock now" value={currentStock} unit={unit} />
+        <Summary
+          label="Unmatched outbound"
+          value={unmatchedOutbound}
+          unit={unit}
+        />
+        <Summary
+          label="Received into stock"
+          value={totalReceived}
+          unit={unit}
+        />
+        <Summary
+          label="Express (not stocked)"
+          value={totalExpress}
+          unit={unit}
+        />
+        <Summary label="Customer orders" value={totalOrdered} unit={unit} />
+        <Summary label="Damage reported" value={totalDamaged} unit={unit} />
+        <Summary label="Resolved to stock" value={totalRestored} unit={unit} />
+        <Summary label="Disposed" value={totalDisposed} unit={unit} />
+      </dl>
+
+      {hasReconciliationIssue && (
+        <p
+          className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+          role="status"
+        >
+          Running balances are clamped at zero.{" "}
+          {unmatchedOutbound > 0
+            ? `${unmatchedOutbound} ${unit} of outbound quantity could not be matched to recorded stock. `
+            : "Recorded movements do not reconcile to current stock. "}
+          Check for missing opening stock or incorrect transaction dates.
+        </p>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="border-b bg-gray-50 text-gray-600">
+            <tr>
+              <th className="px-2 py-2 font-medium">Activity</th>
+              <th className="px-2 py-2 font-medium">Quantity</th>
+              <th className="px-2 py-2 font-medium">Stock change</th>
+              <th className="px-2 py-2 font-medium">Balance after</th>
+              <th className="px-2 py-2 font-medium">Unmatched outbound</th>
+              <th className="px-2 py-2 font-medium">Date</th>
+              <th className="px-2 py-2 font-medium">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {movements.map((movement) => (
+              <tr key={movement.id} className="border-b last:border-0">
+                <td className="px-2 py-2">{movement.type}</td>
+                <td className="px-2 py-2 tabular-nums">
+                  {movement.quantity.toLocaleString()} {unit}
+                </td>
+                <td className="px-2 py-2 tabular-nums">
+                  {movement.stockChange === 0
+                    ? "—"
+                    : `${movement.stockChange > 0 ? "+" : ""}${movement.stockChange.toLocaleString()} ${unit}`}
+                </td>
+                <td className="px-2 py-2 tabular-nums">
+                  {movement.balanceAfter.toLocaleString()} {unit}
+                </td>
+                <td className="px-2 py-2 tabular-nums">
+                  {movement.unmatchedOutbound > 0
+                    ? `${movement.unmatchedOutbound.toLocaleString()} ${unit}`
+                    : "—"}
+                </td>
+                <td className="whitespace-nowrap px-2 py-2">
+                  {new Date(movement.date).toLocaleString("en-GB", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </td>
+                <td className="max-w-48 break-words px-2 py-2 text-gray-600">
+                  {movement.notes || "—"}
+                </td>
+              </tr>
             ))}
-          </ul>
-          <p className="mt-2 font-medium text-blue-700">
-            Total Received: {totalReceived} {unit}
-          </p>
-        </div>
-
-        {/* Orders */}
-        <div>
-          <p className="font-semibold text-gray-600 mb-1">Orders</p>
-          <ul className="space-y-1">
-            {orders.map((o) => (
-              <li key={o._id}>
-                –{o.quantity} on {new Date(o.date).toLocaleDateString()}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 font-medium text-red-700">
-            Total Ordered: {totalOrdered} {unit}
-          </p>
-        </div>
-
-        {/* Damage summary */}
-        {totalDisposed > 0 && (
-          <div className="col-span-1 sm:col-span-2">
-            <p className="font-semibold text-gray-600 mb-1">Damages</p>
-            <ul className="space-y-1">
-              <li className="text-xs text-gray-500 italic">
-                Disposed: {totalDisposed} {unit} (excluded from stock)
-              </li>
-            </ul>
-            <p className="mt-2 font-medium text-yellow-700">
-              Counted Damages: {totalDisposed} {unit}
-            </p>
-          </div>
-        )}
+          </tbody>
+        </table>
       </div>
+    </article>
+  );
+}
 
-      {/* Totals summary */}
-      <div className="mt-4 border-t pt-3 text-sm text-gray-700 space-y-1">
-        <p>
-          <span className="font-semibold text-gray-800">Opening Balance:</span>{" "}
-          {previousBalance} {unit}
-        </p>
-        <p>
-          <span className="font-semibold text-gray-800">Movement Total:</span>{" "}
-          {movementTotal} {unit}
-        </p>
-        <p className="font-semibold text-green-700">
-          Current Stock Balance: {currentStock} {unit}
-        </p>
-      </div>
+function Summary({
+  label,
+  value,
+  unit,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+}) {
+  return (
+    <div>
+      <dt className="text-xs text-gray-500">{label}</dt>
+      <dd className="font-semibold tabular-nums text-gray-900">
+        {value.toLocaleString()} {unit}
+      </dd>
     </div>
   );
 }
