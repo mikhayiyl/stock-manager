@@ -38,7 +38,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="login-page app-canvas flex min-h-dvh items-center justify-center p-3 sm:p-5 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:p-6">
+    <div className="login-page auth-transition-page app-canvas flex min-h-dvh items-center justify-center p-3 sm:p-5 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:p-6">
       <div className="login-card mx-auto grid w-full max-w-6xl overflow-hidden rounded-3xl border border-white/70 bg-white/60 shadow-2xl shadow-slate-900/10 backdrop-blur lg:h-full lg:max-h-[800px] lg:grid-cols-2">
         <section className="relative isolate hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-8 text-white lg:flex xl:p-12">
           <div
@@ -215,6 +215,7 @@ export function LoginPage() {
               New to Stock Manager?{" "}
               <Link
                 to="/register"
+                viewTransition
                 className="font-semibold text-emerald-700 hover:text-emerald-900 hover:underline"
               >
                 Create an account
