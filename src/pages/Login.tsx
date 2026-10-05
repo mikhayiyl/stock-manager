@@ -38,9 +38,9 @@ export function LoginPage() {
   };
 
   return (
-    <div className="app-canvas min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-6xl overflow-hidden rounded-3xl border border-white/70 bg-white/60 shadow-2xl shadow-slate-900/10 backdrop-blur sm:min-h-[calc(100vh-3rem)] lg:grid-cols-2 lg:min-h-[calc(100vh-4rem)]">
-        <section className="relative isolate flex min-h-72 flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-7 text-white sm:p-10 lg:min-h-[680px] lg:p-14">
+    <div className="login-page app-canvas flex min-h-dvh items-center justify-center p-3 sm:p-5 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:p-6">
+      <div className="login-card mx-auto grid w-full max-w-6xl overflow-hidden rounded-3xl border border-white/70 bg-white/60 shadow-2xl shadow-slate-900/10 backdrop-blur lg:h-full lg:max-h-[800px] lg:grid-cols-2">
+        <section className="relative isolate hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-8 text-white lg:flex xl:p-12">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -right-28 -top-28 -z-10 size-96 rounded-full border border-emerald-300/15"
@@ -64,57 +64,74 @@ export function LoginPage() {
               </div>
             </div>
 
-            <div className="mt-12 max-w-lg sm:mt-16 lg:mt-24">
+            <div className="mt-8 max-w-lg xl:mt-12">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
                 Make every item count
               </p>
-              <h1 className="mt-4 text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
+              <h1 className="mt-3 text-4xl font-semibold leading-[1.08] tracking-tight xl:text-5xl">
                 A clearer view of stock.
-                <span className="mt-2 block text-emerald-300">
+                <span className="mt-1 block text-emerald-300">
                   A stronger way to run your business.
                 </span>
               </h1>
-              <p className="mt-5 max-w-md text-sm leading-6 text-slate-300 sm:text-base">
+              <p className="mt-4 max-w-md text-sm leading-6 text-slate-300">
                 Bring your inventory, movements, and decisions together in one
                 calm, dependable workspace.
               </p>
             </div>
           </div>
 
-          <div className="mt-10 grid max-w-md grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm">
+          <div className="mt-6 grid max-w-md grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3 backdrop-blur-sm">
               <Boxes aria-hidden="true" className="size-5 text-emerald-300" />
-              <p className="mt-3 text-sm font-medium">Know what you have</p>
-              <p className="mt-1 text-xs leading-5 text-slate-400">
+              <p className="mt-2 text-sm font-medium">Know what you have</p>
+              <p className="mt-1 text-xs leading-4 text-slate-400">
                 Keep stock details close at hand.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3 backdrop-blur-sm">
               <ChartNoAxesCombined
                 aria-hidden="true"
                 className="size-5 text-emerald-300"
               />
-              <p className="mt-3 text-sm font-medium">Move with confidence</p>
-              <p className="mt-1 text-xs leading-5 text-slate-400">
+              <p className="mt-2 text-sm font-medium">Move with confidence</p>
+              <p className="mt-1 text-xs leading-4 text-slate-400">
                 See the signals behind your next step.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="flex items-center justify-center bg-white/80 px-6 py-10 sm:px-12 lg:px-14">
+        <section className="login-form-panel flex items-center justify-center bg-white/85 px-6 py-6 sm:px-12 sm:py-10 lg:px-10 lg:py-8 xl:px-14">
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="w-full max-w-md space-y-6"
+            className="login-form w-full max-w-md space-y-5 sm:space-y-6"
           >
+            <div className="login-mobile-brand mb-5 flex items-center gap-3 lg:hidden">
+              <span className="grid size-10 place-items-center rounded-xl bg-emerald-100 text-emerald-800">
+                <Warehouse aria-hidden="true" className="size-5" />
+              </span>
+              <div>
+                <p className="text-sm font-bold tracking-[0.12em] text-slate-900">
+                  STOCK MANAGER
+                </p>
+                <p className="mt-0.5 hidden text-xs text-slate-500 sm:block">
+                  Inventory workspace
+                </p>
+              </div>
+            </div>
+
             <div>
               <p className="text-sm font-semibold text-emerald-700">
                 Welcome back
               </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
-                Sign in to your workspace
+              <h2 className="login-heading mt-1 text-3xl font-semibold tracking-tight text-slate-900 sm:mt-2">
+                <span className="sm:hidden">Sign in</span>
+                <span className="hidden sm:inline">
+                  Sign in to your workspace
+                </span>
               </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
+              <p className="login-intro mt-2 hidden text-sm leading-6 text-slate-500 sm:block">
                 Your stockroom is ready when you are.
               </p>
             </div>
@@ -128,8 +145,8 @@ export function LoginPage() {
               </p>
             )}
 
-            <div className="space-y-4">
-              <div>
+            <div className="login-fields space-y-3.5 sm:space-y-4">
+              <div className="login-field">
                 <label
                   htmlFor="email"
                   className="mb-1.5 block text-sm font-medium text-slate-700"
@@ -153,7 +170,7 @@ export function LoginPage() {
                 )}
               </div>
 
-              <div>
+              <div className="login-field">
                 <label
                   htmlFor="password"
                   className="mb-1.5 block text-sm font-medium text-slate-700"
@@ -203,7 +220,7 @@ export function LoginPage() {
                 Create an account
               </Link>
             </p>
-            <p className="border-t border-slate-100 pt-5 text-center text-xs text-slate-400">
+            <p className="hidden border-t border-slate-100 pt-4 text-center text-xs text-slate-400 sm:block">
               Built to make everyday inventory decisions feel simpler.
             </p>
           </form>
