@@ -10,6 +10,7 @@ export function useDocumentTitle() {
     const titles: Record<string, string> = {
       "/": "Dashboard",
       "/stock": "Stock List",
+      "/stock-movements": "Stock Movement History",
       "/orders": "Orders",
       "/receive": "Receive Items",
       "/alert": "Product Alerts",

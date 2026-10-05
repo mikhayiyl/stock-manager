@@ -6,6 +6,7 @@ const baseLinks = [
   { to: "/", label: "Dashboard" },
   { to: "/orders", label: "Orders" },
   { to: "/stock", label: "Stock List" },
+  { to: "/stock-movements", label: "Stock Movements" },
   { to: "/receive", label: "Receive Items" },
   { to: "/stock-scope", label: "Stock Scope" },
   { to: "/salestrend", label: "Sales Trend" },

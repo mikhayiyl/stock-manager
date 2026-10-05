@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { DamageModal } from "@/components/stock/DamageModal";
+import { StockAdjustmentModal } from "@/components/stock/StockAdjustmentModal";
 import getAuthUser from "@/lib/auth";
 import { EmptyState } from "@/components/EmptyState";
 import { SkeletonBlock } from "../SkeletonBlock";
@@ -78,7 +79,10 @@ export default function StockTable({
               </td>
               {isAdmin && (
                 <td className="p-3">
-                  <DamageModal product={product} />
+                  <div className="flex items-center gap-3">
+                    <StockAdjustmentModal product={product} />
+                    <DamageModal product={product} />
+                  </div>
                 </td>
               )}
             </tr>

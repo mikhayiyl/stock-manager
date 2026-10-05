@@ -6,23 +6,29 @@ import useDamages from "@/hooks/useDamages";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { EmptyState } from "@/components/EmptyState";
+import { StockAdjustmentModal } from "@/components/stock/StockAdjustmentModal";
+import { StockMovementHistory } from "@/components/stock/StockMovementHistory";
+import getAuthUser from "@/lib/auth";
+import { SkeletonBlock } from "@/components/SkeletonBlock";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export function ProductPage() {
   const { itemCode } = useParams();
-  const { products } = useProducts();
-  const { orders } = useOrders();
-  const { damages } = useDamages();
+  const { products, isLoading: productsLoading } = useProducts();
+  const { orders, isLoading: ordersLoading } = useOrders();
+  const { damages, isLoading: damagesLoading } = useDamages();
+  const isLoading = productsLoading || ordersLoading || damagesLoading;
 
   const product = products.find((p) => p.itemCode === itemCode);
+  const isAdmin = getAuthUser()?.isAdmin === true;
 
   // page title
   useEffect(() => {
     document.title = `${product?.name}`;
   }, [product?.name]);
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const thisMonth = now.getMonth();
   const lastMonth = (thisMonth + 11) % 12;
 
@@ -44,7 +50,7 @@ export function ProductPage() {
     });
 
     return { thisMonthTotal, lastMonthTotal };
-  }, [orders, itemCode]);
+  }, [orders, itemCode, now, thisMonth, lastMonth]);
 
   const totalOrders = orders.reduce(
     (sum, o) => (o.itemCode === itemCode ? sum + o.quantity : sum),
@@ -76,13 +82,29 @@ export function ProductPage() {
     ],
   };
 
+  if (isLoading) {
+    return (
+      <SkeletonBlock
+        variant="card"
+        rows={2}
+        title="Loading product details..."
+      />
+    );
+  }
+
   if (!product?.itemCode) {
     return <EmptyState message="product not found" />;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{product.name}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
+          <p className="mt-1 text-sm text-gray-600">{product.itemCode}</p>
+        </div>
+        {isAdmin && <StockAdjustmentModal product={product} />}
+      </div>
 
       {/* Product Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded shadow-sm">
@@ -135,6 +157,8 @@ export function ProductPage() {
           </div>
         </div>
       </div>
+
+      <StockMovementHistory productId={product._id} unit={product.unit} />
     </div>
   );
 }
