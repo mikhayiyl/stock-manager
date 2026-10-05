@@ -152,6 +152,7 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
       onSubmit={handleSubmit(onSubmit)}
       className="w-full max-w-xl space-y-4 rounded-md border border-gray-200 bg-white p-5 shadow-sm"
     >
+      <h3 className="text-lg font-semibold text-gray-900">Add item</h3>
       <div>
         <label className="text-sm font-medium" htmlFor="receipt-item-code">
           Item code

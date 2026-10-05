@@ -77,8 +77,6 @@ export function ReceiveData({ highlightId }: { highlightId: string | null }) {
 
   return (
     <section className="min-w-0 space-y-4 overflow-x-auto rounded-md border border-gray-200 bg-white p-4 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900">Stock receipts</h3>
-
       <ProductFilters filters={filters} onChange={setFilters} />
 
       {filteredReceipts.length > 0 ? (

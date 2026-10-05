@@ -22,13 +22,12 @@ const baseLinks = [
   { to: "/orders", label: "Orders", Icon: ClipboardList },
   { to: "/products", label: "Stock List", Icon: Boxes },
   { to: "/stock-movements", label: "Stock Movements", Icon: ArrowLeftRight },
-  { to: "/receive", label: "Receive Items", Icon: PackagePlus },
-  { to: "/stock-scope", label: "Stock Scope", Icon: Activity },
-  { to: "/salestrend", label: "Sales Trend", Icon: ChartColumn },
+  { to: "/receive", label: "Receive Stock", Icon: PackagePlus },
+  { to: "/stock-scope", label: "Stock Overview", Icon: Activity },
+  { to: "/salestrend", label: "Sales Trends", Icon: ChartColumn },
   { to: "/damages", label: "Damages", Icon: TriangleAlert },
   { to: "/reports", label: "Reports", Icon: FileText },
 ];
-
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const isLoggedIn = Boolean(localStorage.getItem("x-auth-token"));
@@ -71,30 +70,32 @@ export default function Sidebar() {
               <p className="text-sm font-bold tracking-wide text-white">
                 STOCK MANAGER
               </p>
-              <p className="mt-0.5 text-xs text-slate-300">Inventory workspace</p>
+              <p className="mt-0.5 text-xs text-slate-300">
+                Inventory workspace
+              </p>
             </div>
           </div>
           <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
             Workspace
           </p>
           <nav className="space-y-1">
-          {links.map(({ to, label, Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] shadow-sm"
-                    : "text-slate-300 hover:bg-[var(--sidebar-accent)] hover:text-white"
-                }`
-              }
-              onClick={() => setOpen(false)}
-            >
-              <Icon aria-hidden="true" className="size-[1.125rem] shrink-0" />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+            {links.map(({ to, label, Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] shadow-sm"
+                      : "text-slate-300 hover:bg-[var(--sidebar-accent)] hover:text-white"
+                  }`
+                }
+                onClick={() => setOpen(false)}
+              >
+                <Icon aria-hidden="true" className="size-[1.125rem] shrink-0" />
+                <span>{label}</span>
+              </NavLink>
+            ))}
           </nav>
           <div className="mt-auto border-t border-[var(--sidebar-border)] px-3 pt-4">
             <div className="flex items-center gap-2 text-xs text-slate-400">

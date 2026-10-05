@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { isAxiosError } from "axios";
 import apiClient from "@/services/api-client";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -61,8 +62,9 @@ export function RegisterPage() {
       setSuccess("Account created successfully. You can now log in.");
       reset();
       window.location.href = "/";
-    } catch (err: any) {
-      if (err.status == 400) setError("Email Already Registered try to login");
+    } catch (err) {
+      if (isAxiosError(err) && err.response?.status === 400)
+        setError("Email Already Registered try to login");
       else setError("An expected error occured");
     }
   };
