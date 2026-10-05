@@ -17,6 +17,8 @@ import { SalesTrendReport } from "./pages/SalesTrend";
 import StockListPage from "./pages/StockListPage";
 import StockMovementsPage from "./pages/StockMovementsPage";
 import StockHealthDashboard from "./pages/StockScope";
+import UsersPage from "./pages/UsersPage";
+import getAuthUser from "./lib/auth";
 
 function App() {
   //dynamic page title
@@ -53,6 +55,14 @@ function App() {
           <Route path="/express" element={<ExpressPage />} />
           <Route path="/salestrend" element={<SalesTrendReport />} />
           <Route path="/stock-scope" element={<StockHealthDashboard />} />
+          <Route
+            path="/users"
+            element={
+              <AdminRoute>
+                <UsersPage />
+              </AdminRoute>
+            }
+          />
           <Route path="/logout" element={<LogoutPage />} />
           <Route path="/product/:itemCode" element={<ProductPage />} />
         </Route>
@@ -69,6 +79,12 @@ function AppLayout() {
       <Outlet />
     </Layout>
   );
+}
+
+function AdminRoute({ children }: { children: ReactNode }) {
+  const user = getAuthUser();
+  if (!user) return <Navigate to="/login" replace />;
+  return user.isAdmin ? children : <Navigate to="/" replace />;
 }
 
 export function PublicRoute({ children }: { children: ReactNode }) {

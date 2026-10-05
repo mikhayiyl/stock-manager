@@ -15,7 +15,9 @@ import {
   PackagePlus,
   TriangleAlert,
   Warehouse,
+  UsersRound,
 } from "lucide-react";
+import getAuthUser from "@/lib/auth";
 
 const baseLinks = [
   { to: "/", label: "Dashboard", Icon: LayoutDashboard },
@@ -31,12 +33,17 @@ const baseLinks = [
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const isLoggedIn = Boolean(localStorage.getItem("x-auth-token"));
+  const isAdmin = getAuthUser()?.isAdmin === true;
 
   const authLink = isLoggedIn
     ? { to: "/logout", label: "Sign out", Icon: LogOut }
     : { to: "/login", label: "Sign in", Icon: LogIn };
 
-  const links = [...baseLinks, authLink];
+  const links = [
+    ...baseLinks,
+    ...(isAdmin ? [{ to: "/users", label: "Users", Icon: UsersRound }] : []),
+    authLink,
+  ];
 
   return (
     <>
