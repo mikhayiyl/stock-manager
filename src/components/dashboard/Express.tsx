@@ -22,8 +22,8 @@ export function LatestExpress({ receipts, isLoading }: Props) {
   }
 
   return (
-    <section className="min-w-0 rounded-md border border-gray-200 bg-white p-4 text-sm shadow-sm">
-      <h3 className="mb-4 text-lg font-semibold text-gray-900">
+    <section className="min-w-0 rounded-xl border border-gray-200/80 bg-white p-4 text-sm shadow-sm shadow-slate-900/[0.03] sm:p-5">
+      <h3 className="mb-4 text-lg font-semibold tracking-tight text-slate-900">
         Latest express delivery
       </h3>
       <p>
@@ -49,7 +49,7 @@ export function LatestExpress({ receipts, isLoading }: Props) {
 
       <Link
         to="/express"
-        className="mt-4 inline-block font-medium text-blue-700 hover:text-blue-900"
+        className="mt-4 inline-block font-semibold text-emerald-700 hover:text-emerald-900"
       >
         View express deliveries
       </Link>

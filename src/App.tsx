@@ -44,6 +44,7 @@ function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/stock" element={<StockListPage />} />
+          <Route path="/products" element={<StockListPage />} />
           <Route path="/stock-movements" element={<StockMovementsPage />} />
           <Route path="/receive" element={<ReceivePage />} />
           <Route path="/orders" element={<OrdersPage />} />

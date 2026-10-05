@@ -27,13 +27,13 @@ export function RecentMovements({ products, receipts, isLoading }: Props) {
   }
 
   return (
-    <section className="min-w-0 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-4 text-lg font-semibold text-gray-900">
+    <section className="min-w-0 rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm shadow-slate-900/[0.03] sm:p-5">
+      <h3 className="mb-4 text-lg font-semibold tracking-tight text-slate-900">
         Recent stock receipts
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[32rem] text-left text-sm">
-          <thead className="border-b text-xs uppercase tracking-wide text-gray-500">
+          <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
             <tr>
               <th className="pb-3 pr-4 font-medium">Item</th>
               <th className="pb-3 pr-4 font-medium">Quantity received</th>
@@ -45,9 +45,12 @@ export function RecentMovements({ products, receipts, isLoading }: Props) {
               const product = productByCode.get(receipt.itemCode);
 
               return (
-                <tr key={receipt._id} className="border-b last:border-0">
+                <tr
+                  key={receipt._id}
+                  className="border-b border-gray-100 transition-colors last:border-0 hover:bg-emerald-50/40"
+                >
                   <td className="py-3 pr-4">
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-slate-800">
                       {product?.name ?? receipt.itemCode}
                     </div>
                     <div className="text-xs text-gray-500">
@@ -72,7 +75,7 @@ export function RecentMovements({ products, receipts, isLoading }: Props) {
       </div>
       <Link
         to="/stock"
-        className="mt-4 inline-block text-sm font-medium text-blue-700 hover:text-blue-900"
+        className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-900"
       >
         View stock
       </Link>

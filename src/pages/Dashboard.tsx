@@ -13,7 +13,17 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Inventory overview</h2>
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+          Overview
+        </p>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          Your inventory, at a glance
+        </h2>
+        <p className="text-sm text-slate-500">
+          The key numbers and latest activity to help you stay in control.
+        </p>
+      </div>
       <SummaryCards products={products} orders={orders} isLoading={isLoading} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2">
