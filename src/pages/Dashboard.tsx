@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { DashboardAttention } from "@/components/dashboard/DashboardAttention";
 
 export default function DashboardPage() {
   const { products, isLoading: productsLoading } = useProducts();
@@ -26,8 +27,8 @@ export default function DashboardPage() {
   }).format(new Date());
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-7">
-      <section className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-5 py-6 text-white shadow-xl shadow-slate-900/10 sm:px-8 sm:py-8">
+    <div className="mx-auto max-w-[1600px] space-y-7 xl:space-y-4">
+      <section className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-5 py-6 text-white shadow-xl shadow-slate-900/10 sm:px-8 sm:py-8 xl:py-5">
         <div
           aria-hidden="true"
           className="absolute -right-16 -top-28 -z-10 size-80 rounded-full bg-emerald-400/15 blur-3xl"
@@ -56,11 +57,11 @@ export default function DashboardPage() {
 
           <nav
             aria-label="Dashboard quick actions"
-            className="flex flex-wrap gap-2.5"
+            className="flex flex-wrap gap-2.5 xl:flex-nowrap xl:gap-2"
           >
             <Link
               to="/receive"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 xl:px-3"
             >
               <PackagePlus aria-hidden="true" className="size-4" />
               Receive stock
@@ -68,24 +69,24 @@ export default function DashboardPage() {
             </Link>
             <Link
               to="/products"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/15 bg-white/[0.07] px-4 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/15 bg-white/[0.07] px-4 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 xl:px-3"
             >
               <Boxes aria-hidden="true" className="size-4" />
               Stock list
             </Link>
             <Link
               to="/reports"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/15 bg-white/[0.07] px-4 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/15 bg-white/[0.07] px-4 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 xl:px-3"
             >
               <FileBarChart2 aria-hidden="true" className="size-4" />
               Reports
             </Link>
             <Link
               to="/insights"
-              className="inline-flex min-h-11 items-center  gap-2 rounded-lg border border-white/15 bg-violet-400 px-4 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/15 bg-violet-400 px-4 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 xl:px-3"
             >
               <Sparkles aria-hidden="true" className="size-4" />
-              Generate AI insights
+              AI insights
               <ArrowUpRight aria-hidden="true" className="size-4" />
             </Link>
           </nav>
@@ -93,6 +94,9 @@ export default function DashboardPage() {
       </section>
 
       <SummaryCards products={products} orders={orders} isLoading={isLoading} />
+      <div className="xl:hidden">
+        <DashboardAttention products={products} orders={orders} />
+      </div>
 
       <section aria-label="Recent inventory activity" className="space-y-4">
         <div className="flex items-end justify-between gap-4">
@@ -104,12 +108,6 @@ export default function DashboardPage() {
               Inventory activity
             </h3>
           </div>
-          <Link
-            to="/stock-movements"
-            className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-800 transition hover:text-emerald-950 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
-          >
-            All movements <ArrowUpRight aria-hidden="true" className="size-4" />
-          </Link>
         </div>
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
           <div className="xl:col-span-2">

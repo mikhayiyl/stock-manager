@@ -27,8 +27,8 @@ export function RecentMovements({ products, receipts, isLoading }: Props) {
   }
 
   return (
-    <section className="min-w-0 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-900/[0.035] sm:p-5">
-      <h3 className="mb-5 text-lg font-semibold tracking-tight text-slate-900">
+    <section className="min-w-0 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-900/[0.035] sm:p-5 xl:p-4">
+      <h3 className="mb-5 text-lg font-semibold tracking-tight text-slate-900 xl:mb-3">
         Recent stock receipts
       </h3>
       <div className="overflow-x-auto">
@@ -49,7 +49,7 @@ export function RecentMovements({ products, receipts, isLoading }: Props) {
                   key={receipt._id}
                   className="border-b border-slate-100 transition-colors last:border-0 hover:bg-emerald-50/50"
                 >
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 xl:py-2.5">
                     <div className="font-semibold text-slate-800">
                       {product?.name ?? receipt.itemCode}
                     </div>
@@ -57,10 +57,10 @@ export function RecentMovements({ products, receipts, isLoading }: Props) {
                       {receipt.itemCode}
                     </div>
                   </td>
-                  <td className="py-3 pr-4 font-medium tabular-nums text-slate-700">
+                  <td className="py-3 pr-4 font-medium tabular-nums text-slate-700 xl:py-2.5">
                     {receipt.quantity.toLocaleString()} {product?.unit}
                   </td>
-                  <td className="whitespace-nowrap py-3 text-slate-600">
+                  <td className="whitespace-nowrap py-3 text-slate-600 xl:py-2.5">
                     {new Date(receipt.date).toLocaleString("en-GB", {
                       dateStyle: "medium",
                       timeStyle: "short",
@@ -75,7 +75,7 @@ export function RecentMovements({ products, receipts, isLoading }: Props) {
       </div>
       <Link
         to="/stock"
-        className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-900"
+        className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-900 xl:mt-3"
       >
         View stock
       </Link>

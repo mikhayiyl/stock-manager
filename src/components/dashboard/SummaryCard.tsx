@@ -7,12 +7,19 @@ import type { Product } from "@/types/Product";
 import {
   AlertTriangle,
   Boxes,
-  Package,
   PackageX,
   ShieldAlert,
+  ShoppingCart,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
+import { Link } from "react-router-dom";
+
+type Trend = {
+  value: number;
+  label: string;
+};
 
 type Metric = {
   title: string;
@@ -24,6 +31,7 @@ type Metric = {
   href?: string;
   linkLabel?: string;
   linkAriaLabel?: string;
+  trend?: Trend;
 };
 
 type Props = {
@@ -32,20 +40,65 @@ type Props = {
   isLoading: boolean;
 };
 
+const numberFormat = new Intl.NumberFormat();
+
+function formatNumber(value: number) {
+  return numberFormat.format(value);
+}
+
+function getOrderStats(orders: Order[]) {
+  const now = new Date();
+
+  const currentPeriodStart = new Date(now);
+  currentPeriodStart.setDate(now.getDate() - 30);
+
+  const previousPeriodStart = new Date(now);
+  previousPeriodStart.setDate(now.getDate() - 60);
+
+  const currentOrders = orders.filter((order) => {
+    const date = new Date(order.date);
+
+    if (Number.isNaN(date.getTime())) {
+      return false;
+    }
+
+    return date >= currentPeriodStart && date <= now;
+  });
+
+  const previousOrders = orders.filter((order) => {
+    const date = new Date(order.date);
+
+    if (Number.isNaN(date.getTime())) {
+      return false;
+    }
+
+    return date >= previousPeriodStart && date < currentPeriodStart;
+  });
+
+  const currentCount = currentOrders.length;
+  const previousCount = previousOrders.length;
+
+  let changePercent = 0;
+
+  if (previousCount > 0) {
+    changePercent = ((currentCount - previousCount) / previousCount) * 100;
+  } else if (currentCount > 0) {
+    changePercent = 100;
+  }
+
+  return {
+    currentCount,
+    changePercent,
+  };
+}
+
 export function SummaryCards({ products, orders, isLoading }: Props) {
   const { isLowStock } = useLowStockAnalysis(orders);
+
+  const { currentCount: ordersLast30Days, changePercent } =
+    getOrderStats(orders);
+
   const metrics: Metric[] = [
-    {
-      title: "Products",
-      value: products.length,
-      description: "In your catalog",
-      Icon: Package,
-      color: "text-emerald-800 bg-emerald-50 ring-emerald-100",
-      accent: "before:bg-emerald-500",
-      href: "/products",
-      linkLabel: "View",
-      linkAriaLabel: "View all products",
-    },
     {
       title: "Units on hand",
       value: products.reduce((sum, product) => sum + product.numberInStock, 0),
@@ -53,6 +106,18 @@ export function SummaryCards({ products, orders, isLoading }: Props) {
       Icon: Boxes,
       color: "text-cyan-800 bg-cyan-50 ring-cyan-100",
       accent: "before:bg-cyan-500",
+    },
+    {
+      title: "Orders",
+      value: ordersLast30Days,
+      description: "Last 30 days",
+      Icon: ShoppingCart,
+      color: "text-emerald-800 bg-emerald-50 ring-emerald-100",
+      accent: "before:bg-emerald-500",
+      trend: {
+        value: changePercent,
+        label: "vs previous 30 days",
+      },
     },
     {
       title: "Low stock",
@@ -83,6 +148,9 @@ export function SummaryCards({ products, orders, isLoading }: Props) {
       Icon: ShieldAlert,
       color: "text-orange-800 bg-orange-50 ring-orange-100",
       accent: "before:bg-orange-500",
+      href: "/products",
+      linkLabel: "View",
+      linkAriaLabel: "View damaged inventory",
     },
   ];
 
@@ -92,47 +160,52 @@ export function SummaryCards({ products, orders, isLoading }: Props) {
       aria-busy={isLoading}
     >
       {metrics.map((metric) => (
-        <MetricCard key={metric.title} {...metric} isLoading={isLoading} />
+        <MetricCard key={metric.title} metric={metric} isLoading={isLoading} />
       ))}
     </div>
   );
 }
 
 function MetricCard({
-  title,
-  value,
-  description,
-  Icon,
-  color,
-  accent,
-  href,
-  linkLabel,
-  linkAriaLabel,
+  metric,
   isLoading,
 }: {
-  title: string;
-  value: number;
-  description: string;
-  Icon: LucideIcon;
-  color: string;
-  accent: string;
-  href?: string;
-  linkLabel?: string;
-  linkAriaLabel?: string;
+  metric: Metric;
   isLoading: boolean;
 }) {
+  const {
+    title,
+    value,
+    description,
+    Icon,
+    color,
+    accent,
+    href,
+    linkLabel,
+    linkAriaLabel,
+    trend,
+  } = metric;
+
+  const isPositiveTrend = trend ? trend.value >= 0 : false;
+
   return (
     <article
-      className={`relative min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-900/[0.035] before:absolute before:inset-x-0 before:top-0 before:h-1 ${accent} transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-900/[0.07] sm:p-5`}
+      className={`relative min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-900/[0.035] before:absolute before:inset-x-0 before:top-0 before:h-1 ${accent} sm:p-5 xl:p-4 ${
+        href
+          ? "cursor-pointer transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-900/[0.07]"
+          : ""
+      }`}
     >
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-medium text-slate-600">{title}</h3>
+
         <span
           className={`grid size-10 shrink-0 place-items-center rounded-xl ring-1 ring-inset ${color}`}
         >
           <Icon aria-hidden="true" className="size-[1.125rem]" />
         </span>
       </div>
+
       {isLoading ? (
         <div
           aria-hidden="true"
@@ -140,13 +213,15 @@ function MetricCard({
         />
       ) : (
         <>
-          <p className="mt-4 break-words text-3xl font-semibold tracking-tight tabular-nums text-slate-950">
-            {value.toLocaleString()}
+          <p className="mt-4 break-words text-3xl font-semibold tracking-tight tabular-nums text-slate-950 xl:mt-3">
+            {formatNumber(value)}
           </p>
-          <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+
+          <div className="mt-2 flex min-w-0 items-center justify-between gap-2 xl:mt-1">
             <p className="min-w-0 truncate text-xs leading-5 text-slate-500">
               {description}
             </p>
+
             {href && linkLabel && linkAriaLabel && (
               <Link
                 to={href}
@@ -157,6 +232,27 @@ function MetricCard({
               </Link>
             )}
           </div>
+
+          {trend && (
+            <div
+              className={`mt-3 inline-flex items-center gap-1 text-xs font-semibold xl:mt-2 ${
+                isPositiveTrend ? "text-emerald-700" : "text-rose-700"
+              }`}
+            >
+              {isPositiveTrend ? (
+                <TrendingUp aria-hidden="true" className="size-3.5" />
+              ) : (
+                <TrendingDown aria-hidden="true" className="size-3.5" />
+              )}
+
+              <span>
+                {isPositiveTrend ? "+" : ""}
+                {trend.value.toFixed(1)}%
+              </span>
+
+              <span className="font-medium text-slate-400">{trend.label}</span>
+            </div>
+          )}
         </>
       )}
     </article>
