@@ -48,8 +48,8 @@ export default function StockHealthTabs({ active, tabs, onSelect }: Props) {
           }}
           className={`shrink-0 border-b-2 px-4 py-2 text-sm transition ${
             active === tab.key
-              ? "border-blue-700 font-semibold text-blue-800"
-              : "border-transparent text-gray-600 hover:text-blue-700"
+              ? "border-emerald-700 font-semibold text-emerald-800"
+              : "border-transparent text-slate-600 hover:text-emerald-800"
           }`}
         >
           {tab.label}

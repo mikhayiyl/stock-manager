@@ -86,7 +86,7 @@ export function StockAdjustmentModal({ product }: Props) {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="rounded text-sm font-medium text-blue-700 underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="rounded text-sm font-medium text-emerald-800 underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
         >
           Record count
         </button>
@@ -133,7 +133,7 @@ export function StockAdjustmentModal({ product }: Props) {
                     : undefined
                 }
                 {...register("countedStock", { valueAsNumber: true })}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600"
               />
               {errors.countedStock && (
                 <p
@@ -177,7 +177,7 @@ export function StockAdjustmentModal({ product }: Props) {
                 }
                 {...register("reason")}
                 placeholder="e.g. Monthly physical inventory count"
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
               />
               {errors.reason && (
                 <p
@@ -205,7 +205,7 @@ export function StockAdjustmentModal({ product }: Props) {
               <button
                 type="submit"
                 disabled={isSubmitting || !difference || !watch("reason")?.trim()}
-                className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? "Recording..." : "Record adjustment"}
               </button>

@@ -42,7 +42,7 @@ export function OrdersTable({
 
   return (
     <table className="min-w-full text-sm">
-      <thead className="bg-gray-100 text-left">
+      <thead className="bg-emerald-50/70 text-left text-slate-700">
         <tr>
           <th className="p-2">Item Code</th>
           <th className="p-2">Order No</th>

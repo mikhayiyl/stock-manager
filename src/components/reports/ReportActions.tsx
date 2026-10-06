@@ -12,12 +12,12 @@ export function ReportActions({
   disabled = false,
 }: Props) {
   return (
-    <div className="flex gap-4 no-print">
+    <div className="flex flex-wrap gap-3 no-print">
       <button
         type="button"
         onClick={onExportCSV}
         disabled={disabled}
-        className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-md bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Export to CSV
       </button>
@@ -25,7 +25,7 @@ export function ReportActions({
         type="button"
         onClick={onExportPDF}
         disabled={disabled}
-        className="rounded-md bg-red-700 px-4 py-2 font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-md border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Export to PDF
       </button>
@@ -33,7 +33,7 @@ export function ReportActions({
         type="button"
         onClick={onPrint}
         disabled={disabled}
-        className="rounded-md bg-gray-700 px-4 py-2 font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-md border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Print Report
       </button>

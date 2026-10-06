@@ -342,7 +342,7 @@ export function ReceiveItemForm({ onStockUpdate }: Props) {
       <button
         type="submit"
         disabled={isSubmitting || isLookingUpProduct}
-        className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-md bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting
           ? "Saving..."

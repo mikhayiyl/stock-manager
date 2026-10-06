@@ -28,7 +28,7 @@ export function ReportFilter({
   const invalidDateRange = Boolean(from && to) && from > to;
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4 no-print">
+    <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm no-print">
       <div>
         <label
           htmlFor="report-from-date"
@@ -43,7 +43,7 @@ export function ReportFilter({
           max={to || undefined}
           value={from}
           onChange={(e) => handleChange("from", e.target.value)}
-          className="mt-1 w-full rounded border border-gray-300 px-3 py-2 sm:w-auto"
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:w-auto"
         />
       </div>
       <div>
@@ -60,7 +60,7 @@ export function ReportFilter({
           min={from || undefined}
           value={to}
           onChange={(e) => handleChange("to", e.target.value)}
-          className="mt-1 w-full rounded border border-gray-300 px-3 py-2 sm:w-auto"
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:w-auto"
         />
       </div>
       <div>
@@ -77,7 +77,7 @@ export function ReportFilter({
           value={search}
           onChange={(e) => handleChange("search", e.target.value)}
           placeholder="Item code or name"
-          className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
         />
       </div>
       <button
@@ -89,7 +89,7 @@ export function ReportFilter({
           setSearch("");
           onFilterChange({ from: "", to: "", search: "" });
         }}
-        className="rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-gray-400"
+        className="rounded-md px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-slate-400"
       >
         Clear filters
       </button>

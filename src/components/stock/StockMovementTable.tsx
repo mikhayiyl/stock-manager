@@ -40,7 +40,7 @@ export function StockMovementTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[760px] text-left text-sm">
-        <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-600">
+        <thead className="bg-emerald-50/70 text-xs uppercase tracking-wide text-slate-600">
           <tr>
             <th scope="col" className="px-5 py-3 font-medium">
               Date
@@ -67,7 +67,7 @@ export function StockMovementTable({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-slate-100">
           {movements.map((movement) => (
             <MovementRow
               key={movement._id}

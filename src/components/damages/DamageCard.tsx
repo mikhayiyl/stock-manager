@@ -43,7 +43,7 @@ const DamageCard = ({ damage, product, onResolve }: DamageCardProps) => {
         <div>Progress:</div>
         <div className="flex gap-2 pt-1 text-xs">
           {resolved > 0 && (
-            <span className="bg-blue-100 text-blue-800 px-2 py-0.5  rounded-sm">
+            <span className="rounded-sm bg-emerald-100 px-2 py-0.5 text-emerald-800">
               ✅ {resolved} Resolved
             </span>
           )}
@@ -77,7 +77,7 @@ const DamageCard = ({ damage, product, onResolve }: DamageCardProps) => {
         <div className="flex gap-2 pt-2">
           <button
             onClick={() => onResolve(damage, "resolved")}
-            className="px-3 py-0.5 rounded-full text-xs bg-blue-600 text-white hover:bg-blue-700"
+            className="rounded-full bg-emerald-700 px-3 py-0.5 text-xs text-white hover:bg-emerald-800"
           >
             Resolve
           </button>

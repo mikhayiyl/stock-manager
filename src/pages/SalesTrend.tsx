@@ -232,7 +232,7 @@ export function SalesTrendReport() {
             setDateRange({ from: "", to: "" });
             setCurrentPage(1);
           }}
-          className="rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-gray-400"
+          className="rounded-md px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-slate-400"
         >
           Clear dates
         </button>
@@ -248,7 +248,7 @@ export function SalesTrendReport() {
       ) : invalidDateRange ? null : chartProducts.length === 0 ? (
         <EmptyState message="No product orders were placed in this date range." />
       ) : (
-        <section className="mx-auto w-full max-w-5xl rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+        <section className="mx-auto w-full max-w-5xl rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
           <h3 className="mb-3 text-base font-semibold text-gray-900">
             Top 10 products by units ordered
           </h3>
@@ -263,7 +263,7 @@ export function SalesTrendReport() {
           type="button"
           onClick={handleExportCSV}
           disabled={isLoading || invalidDateRange || products.length === 0}
-          className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Export CSV
         </button>
@@ -271,13 +271,13 @@ export function SalesTrendReport() {
           type="button"
           onClick={handleExportPDF}
           disabled={isLoading || invalidDateRange || products.length === 0}
-          className="rounded-md bg-green-700 px-4 py-2 font-medium text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Export PDF
         </button>
       </div>
 
-      <section className="min-w-0 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+      <section className="min-w-0 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
         <h3 className="mb-3 text-base font-semibold text-gray-900">
           Product ranking by units ordered
         </h3>
@@ -293,7 +293,7 @@ export function SalesTrendReport() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-left text-sm">
-                <thead className="border-b bg-gray-100 text-gray-700">
+                <thead className="border-b border-slate-200 bg-emerald-50/70 text-slate-700">
                   <tr>
                     <th scope="col" className="p-3">
                       #
@@ -320,7 +320,7 @@ export function SalesTrendReport() {
                       </td>
                       <td className="p-3 font-mono">
                         <Link
-                          className="text-blue-700 underline underline-offset-2"
+                          className="font-medium text-emerald-800 underline underline-offset-2"
                           to={`/product/${product.itemCode}`}
                         >
                           {product.itemCode}
@@ -328,7 +328,7 @@ export function SalesTrendReport() {
                       </td>
                       <td className="p-3">
                         <Link
-                          className="text-blue-700 underline underline-offset-2"
+                          className="font-medium text-emerald-800 underline underline-offset-2"
                           to={`/product/${product.itemCode}`}
                         >
                           {product.name}

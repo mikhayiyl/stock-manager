@@ -64,10 +64,10 @@ export function StockMovementHistory({ productId, unit }: Props) {
 
   return (
     <section
-      className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+      className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm"
       aria-labelledby="stock-movement-heading"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
         <div>
           <h2
             id="stock-movement-heading"
@@ -98,7 +98,7 @@ export function StockMovementHistory({ productId, unit }: Props) {
           <button
             type="button"
             onClick={() => void loadMovements()}
-            className="text-sm font-medium text-blue-700 underline underline-offset-2"
+            className="text-sm font-medium text-emerald-800 underline underline-offset-2"
           >
             Retry
           </button>
@@ -112,7 +112,7 @@ export function StockMovementHistory({ productId, unit }: Props) {
         <>
           <StockMovementTable movements={movements} unitForMovement={() => unit} />
           {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3">
+            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
               <p className="text-sm text-gray-600">
                 Page {page} of {totalPages}
               </p>
@@ -121,7 +121,7 @@ export function StockMovementHistory({ productId, unit }: Props) {
                   type="button"
                   onClick={() => setPage((current) => current - 1)}
                   disabled={page <= 1 || loading}
-                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Previous
                 </button>
@@ -129,7 +129,7 @@ export function StockMovementHistory({ productId, unit }: Props) {
                   type="button"
                   onClick={() => setPage((current) => current + 1)}
                   disabled={page >= totalPages || loading}
-                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Next
                 </button>

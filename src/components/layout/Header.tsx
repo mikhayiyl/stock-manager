@@ -23,7 +23,7 @@ export function Header() {
     (pathname.startsWith("/product/") ? "Product Details" : "Stock Manager");
 
   return (
-    <header className="no-print flex h-16 w-full items-center justify-between border-b border-gray-200/80 bg-white/90 px-4 shadow-[0_1px_3px_rgba(15,23,42,0.03)] backdrop-blur sm:px-6">
+    <header className="no-print flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white px-4 shadow-[0_1px_3px_rgba(15,23,42,0.03)] sm:px-6">
       <div className="ml-12 flex items-center gap-3 sm:ml-16 lg:ml-6">
         <span className="hidden h-8 w-1 rounded-full bg-emerald-500 sm:block" />
         <h1 className="text-base font-semibold tracking-tight text-slate-800 sm:text-lg">

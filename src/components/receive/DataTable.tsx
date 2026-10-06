@@ -15,7 +15,7 @@ export function DataTable({ receipts, products, highlightId }: Props) {
 
   return (
     <table className="w-full min-w-[640px] text-sm">
-      <thead className="bg-gray-100 text-left">
+      <thead className="bg-emerald-50/70 text-left text-slate-700">
         <tr>
           <th className="p-2">Item Code</th>
           <th className="p-2">Name</th>
@@ -37,7 +37,7 @@ export function DataTable({ receipts, products, highlightId }: Props) {
                 receipt._id === highlightId ? "bg-orange-300 font-semibold" : ""
               }`}
             >
-              <td className="p-2 text-blue-600 underline">
+              <td className="p-2 font-medium text-emerald-800 underline-offset-2 hover:underline">
                 <Link to={`/product/${receipt.itemCode}`}>
                   {receipt.itemCode}
                 </Link>

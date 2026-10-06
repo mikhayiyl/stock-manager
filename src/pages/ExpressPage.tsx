@@ -42,8 +42,8 @@ export default function ExpressPage() {
   }, [receipts, filters]);
 
   return (
-    <div className="bg-white p-6 rounded shadow space-y-6">
-      <h2 className="text-2xl font-bold text-purple-700">Express Deliveries</h2>
+    <section className="space-y-6 rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-2xl font-bold text-slate-900">Express Deliveries</h2>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-4">
@@ -51,37 +51,38 @@ export default function ExpressPage() {
           type="text"
           value={filters.itemCode}
           onChange={(e) => setFilters({ ...filters, itemCode: e.target.value })}
-          className="border p-2 rounded"
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
           placeholder="Filter by Item Code"
         />
         <input
           type="text"
           value={filters.client}
           onChange={(e) => setFilters({ ...filters, client: e.target.value })}
-          className="border p-2 rounded"
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
           placeholder="Filter by Client"
         />
         <input
           type="date"
           value={filters.from}
           onChange={(e) => setFilters({ ...filters, from: e.target.value })}
-          className="border p-2 rounded"
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
         />
         <input
           type="date"
           value={filters.to}
           onChange={(e) => setFilters({ ...filters, to: e.target.value })}
-          className="border p-2 rounded"
+          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
         />
       </div>
 
       {expressReceipts.length === 0 ? (
-        <p className="text-center text-sm text-gray-500">
+        <p className="text-center text-sm text-slate-500">
           No express deliveries match your filters.
         </p>
       ) : (
+        <div className="overflow-x-auto rounded-lg border border-slate-200">
         <table className="min-w-full text-sm">
-          <thead className="bg-purple-100 text-left">
+          <thead className="bg-emerald-50/70 text-left text-slate-700">
             <tr>
               <th className="p-2">Item Code</th>
               <th className="p-2">Client</th>
@@ -92,8 +93,8 @@ export default function ExpressPage() {
           </thead>
           <tbody>
             {expressReceipts.map((r) => (
-              <tr key={r._id} className="border-b">
-                <td className="p-2 text-blue-600 underline">
+              <tr key={r._id} className="border-b border-slate-100 last:border-0">
+                <td className="p-2 font-medium text-emerald-800 underline-offset-2 hover:underline">
                   <Link to={`/product/${r.itemCode}`}>{r.itemCode}</Link>
                 </td>
                 <td className="p-2">{r.client ?? "—"}</td>
@@ -104,7 +105,8 @@ export default function ExpressPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
-    </div>
+    </section>
   );
 }

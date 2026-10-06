@@ -107,7 +107,7 @@ export function ProductPage() {
       </div>
 
       {/* Product Info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded shadow-sm">
+      <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm md:grid-cols-2">
         <div>
           <p>
             <strong>Item Code:</strong> {product.itemCode}
@@ -134,7 +134,7 @@ export function ProductPage() {
       </div>
 
       {/* Sales Trend */}
-      <div className="bg-white p-4 rounded shadow-sm">
+      <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
         <h2 className="font-semibold mb-2">Sales Trend</h2>
         <div className="flex items-center gap-6">
           <div className="w-64">

@@ -28,8 +28,10 @@ export default function Pagination({
         <button
           key={i}
           onClick={() => onPageChange(i + 1)}
-          className={`px-3 py-1 border rounded ${
-            currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+          className={`rounded-md border border-slate-300 px-3 py-1 transition-colors hover:bg-slate-50 ${
+            currentPage === i + 1
+              ? "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800"
+              : "text-slate-700"
           }`}
         >
           {i + 1}

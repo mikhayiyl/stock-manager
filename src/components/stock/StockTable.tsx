@@ -36,9 +36,9 @@ export default function StockTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-sm">
       <table className="w-full min-w-[720px] text-sm">
-        <thead className="bg-gray-100 border-b text-left">
+        <thead className="border-b border-slate-200 bg-emerald-50/70 text-left text-slate-700">
           <tr>
             <th className="p-3">Item Code</th>
             <th className="p-3">Name</th>
@@ -59,12 +59,12 @@ export default function StockTable({
                   : "border-b"
               }
             >
-              <td className="p-3 text-blue-600 underline">
+              <td className="p-3 font-medium text-emerald-800 underline-offset-2 hover:underline">
                 <Link to={`/product/${product.itemCode}`}>
                   {product.itemCode}
                 </Link>
               </td>
-              <td className="p-3 text-blue-600 underline">
+              <td className="p-3 font-medium text-emerald-800 underline-offset-2 hover:underline">
                 <Link to={`/product/${product.itemCode}`}>{product.name}</Link>
               </td>
               <td className="p-3">{product.numberInStock}</td>

@@ -103,7 +103,7 @@ export default function StockMovementsPage() {
 
       <form
         onSubmit={applyFilter}
-        className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end"
+        className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:flex-row sm:items-end"
       >
         <div className="flex-1">
           <label
@@ -118,14 +118,14 @@ export default function StockMovementsPage() {
             onChange={(event) => setItemCodeInput(event.target.value)}
             maxLength={50}
             placeholder="e.g. ITEM-001"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
           />
         </div>
         <div className="flex gap-2">
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Apply filter
           </button>
@@ -143,10 +143,10 @@ export default function StockMovementsPage() {
       </form>
 
       <section
-        className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+        className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm"
         aria-labelledby="movement-results-heading"
       >
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
           <div>
             <h2
               id="movement-results-heading"
@@ -183,7 +183,7 @@ export default function StockMovementsPage() {
             <button
               type="button"
               onClick={() => void loadMovements()}
-              className="text-sm font-medium text-blue-700 underline underline-offset-2"
+              className="text-sm font-medium text-emerald-800 underline underline-offset-2"
             >
               Retry
             </button>
@@ -207,7 +207,7 @@ export default function StockMovementsPage() {
               }
             />
             {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3">
+              <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
                 <p className="text-sm text-gray-600">
                   Page {page} of {totalPages}
                 </p>
@@ -216,7 +216,7 @@ export default function StockMovementsPage() {
                     type="button"
                     onClick={() => setPage((current) => current - 1)}
                     disabled={page <= 1 || loading}
-                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Previous
                   </button>
@@ -224,7 +224,7 @@ export default function StockMovementsPage() {
                     type="button"
                     onClick={() => setPage((current) => current + 1)}
                     disabled={page >= totalPages || loading}
-                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Next
                   </button>

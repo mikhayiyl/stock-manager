@@ -80,7 +80,7 @@ export default function StockListPage() {
               }
               setSearchParams(nextParams);
             }}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
           >
             <option value="all">All products</option>
             <option value="low-stock">Low stock</option>
