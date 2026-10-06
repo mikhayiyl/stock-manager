@@ -27,13 +27,13 @@ export function RecentMovements({ products, receipts, isLoading }: Props) {
   }
 
   return (
-    <section className="min-w-0 rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm shadow-slate-900/[0.03] sm:p-5">
-      <h3 className="mb-4 text-lg font-semibold tracking-tight text-slate-900">
+    <section className="min-w-0 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-900/[0.035] sm:p-5">
+      <h3 className="mb-5 text-lg font-semibold tracking-tight text-slate-900">
         Recent stock receipts
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[32rem] text-left text-sm">
-          <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+          <thead className="border-b border-slate-200 text-[11px] uppercase tracking-[0.12em] text-slate-500">
             <tr>
               <th className="pb-3 pr-4 font-medium">Item</th>
               <th className="pb-3 pr-4 font-medium">Quantity received</th>
@@ -47,20 +47,20 @@ export function RecentMovements({ products, receipts, isLoading }: Props) {
               return (
                 <tr
                   key={receipt._id}
-                  className="border-b border-gray-100 transition-colors last:border-0 hover:bg-emerald-50/40"
+                  className="border-b border-slate-100 transition-colors last:border-0 hover:bg-emerald-50/50"
                 >
                   <td className="py-3 pr-4">
-                    <div className="font-medium text-slate-800">
+                    <div className="font-semibold text-slate-800">
                       {product?.name ?? receipt.itemCode}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="mt-0.5 text-xs text-slate-500">
                       {receipt.itemCode}
                     </div>
                   </td>
-                  <td className="py-3 pr-4 tabular-nums text-gray-700">
+                  <td className="py-3 pr-4 font-medium tabular-nums text-slate-700">
                     {receipt.quantity.toLocaleString()} {product?.unit}
                   </td>
-                  <td className="whitespace-nowrap py-3 text-gray-600">
+                  <td className="whitespace-nowrap py-3 text-slate-600">
                     {new Date(receipt.date).toLocaleString("en-GB", {
                       dateStyle: "medium",
                       timeStyle: "short",
