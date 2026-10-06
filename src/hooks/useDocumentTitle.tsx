@@ -16,6 +16,7 @@ export function useDocumentTitle() {
       "/alert": "Product Alerts",
       "/salestrend": "Sales Trend",
       "/reports": "Reports",
+      "/insights": "AI Insights",
       "/login": "Sign In",
       "/logout": "Signing Out...",
     };

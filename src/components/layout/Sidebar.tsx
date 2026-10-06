@@ -13,6 +13,7 @@ import {
   LogOut,
   Package,
   PackagePlus,
+  Sparkles,
   TriangleAlert,
   Warehouse,
   UsersRound,
@@ -29,6 +30,7 @@ const baseLinks = [
   { to: "/salestrend", label: "Sales Trends", Icon: ChartColumn },
   { to: "/damages", label: "Damages", Icon: TriangleAlert },
   { to: "/reports", label: "Reports", Icon: FileText },
+  { to: "/insights", label: "AI Insights", Icon: Sparkles },
 ];
 export default function Sidebar() {
   const [open, setOpen] = useState(false);

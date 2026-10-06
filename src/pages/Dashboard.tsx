@@ -9,6 +9,7 @@ import {
   Boxes,
   FileBarChart2,
   PackagePlus,
+  Sparkles,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -78,6 +79,14 @@ export default function DashboardPage() {
             >
               <FileBarChart2 aria-hidden="true" className="size-4" />
               Reports
+            </Link>
+            <Link
+              to="/insights"
+              className="inline-flex min-h-11 items-center  gap-2 rounded-lg border border-white/15 bg-violet-400 px-4 text-sm font-medium text-white transition hover:border-white/25 hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            >
+              <Sparkles aria-hidden="true" className="size-4" />
+              Generate AI insights
+              <ArrowUpRight aria-hidden="true" className="size-4" />
             </Link>
           </nav>
         </div>

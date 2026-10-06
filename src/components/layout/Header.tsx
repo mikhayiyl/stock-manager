@@ -13,6 +13,7 @@ const pageTitles: Record<string, string> = {
   "/damages": "Damages",
   "/reports": "Reports",
   "/express": "Express Deliveries",
+  "/insights": "AI Insights",
 };
 
 export function Header() {

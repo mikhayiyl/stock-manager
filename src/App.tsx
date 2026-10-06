@@ -8,6 +8,7 @@ import DamagePage from "./pages/DamagesPage";
 import ExpressPage from "./pages/ExpressPage";
 import { LoginPage } from "./pages/Login";
 import { LogoutPage } from "./pages/Logout";
+import InsightsPage from "./pages/InsightsPage";
 import OrdersPage from "./pages/OrdersPage";
 import { ProductPage } from "./pages/ProductPage";
 import ReceivePage from "./pages/ReceivePage";
@@ -51,6 +52,7 @@ function App() {
           <Route path="/receive" element={<ReceivePage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/reports" element={<ReportPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
           <Route path="/damages" element={<DamagePage />} />
           <Route path="/express" element={<ExpressPage />} />
           <Route path="/salestrend" element={<SalesTrendReport />} />
